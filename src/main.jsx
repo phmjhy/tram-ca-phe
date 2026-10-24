@@ -1,45 +1,187 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Coffee, LayoutDashboard, ShoppingCart, ClipboardList, ChefHat, BookOpen, Plus, Minus, Check, Search, Banknote, Smartphone, X } from 'lucide-react';
+import { Coffee, LayoutDashboard, ShoppingCart, ClipboardList, BookOpen, Plus, Minus, Check, Search } from 'lucide-react';
+import { channels, channelName, fmt, businessDate, report, parsePrice, quantity, totalItems } from './domain.js';
+import { createRepository } from './storage.js';
 import './style.css';
 
-const seed = [
-  {id:1,name:'Cà phê đen',category:'Cà phê',price:22000,active:true},
-  {id:2,name:'Cà phê sữa',category:'Cà phê',price:27000,active:true},
-  {id:3,name:'Bạc xỉu',category:'Cà phê',price:29000,active:true},
-  {id:4,name:'Trà đào cam sả',category:'Trà',price:35000,active:true},
-  {id:5,name:'Trà tắc',category:'Trà',price:22000,active:true},
-  {id:6,name:'Matcha latte',category:'Khác',price:39000,active:true},
+// Access lazily so a browser denying storage produces an actionable UI error.
+const repository = createRepository({
+  getItem: key => window.localStorage.getItem(key),
+  setItem: (key, value) => window.localStorage.setItem(key, value),
+  key: index => window.localStorage.key(index),
+  get length() { return window.localStorage.length; },
+});
+const navigation = [
+  ['pos', 'Bán hàng', ShoppingCart], ['orders', 'Đơn hàng', ClipboardList],
+  ['menu', 'Sản phẩm', BookOpen], ['reports', 'Báo cáo', LayoutDashboard],
 ];
-const channels = [{id:'store',name:'Tại quán'},{id:'grab',name:'GrabFood'},{id:'shopee',name:'ShopeeFood'},{id:'hotline',name:'Hotline'}];
-const fmt = n => new Intl.NumberFormat('vi-VN').format(n)+'đ';
-const read = (key,fallback) => { try { const val=localStorage.getItem(key); const parsed=val?JSON.parse(val):fallback; return Array.isArray(parsed)?parsed:fallback } catch { return fallback } };
-const today = () => new Date().toLocaleDateString('sv-SE');
-function App(){
- const [page,setPage]=useState('pos'), [products,setProducts]=useState(()=>read('tram_products',seed)),[orders,setOrders]=useState(()=>read('tram_orders',[]));
- const [cart,setCart]=useState([]),[channel,setChannel]=useState('store'),[query,setQuery]=useState(''),[note,setNote]=useState(''),[customer,setCustomer]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[appCode,setAppCode]=useState(''),[shipping,setShipping]=useState(0),[payment,setPayment]=useState('cash');
- const [newProduct,setNewProduct]=useState({name:'',price:'',category:'Cà phê'});
- const saveProducts=p=>{setProducts(p);localStorage.setItem('tram_products',JSON.stringify(p))};
- const saveOrders=o=>{setOrders(o);localStorage.setItem('tram_orders',JSON.stringify(o))};
- const deliveryFee=channel==='hotline'?Number(shipping||0):0;
- const total=cart.reduce((s,x)=>s+x.price*x.qty,0)+deliveryFee;
- const add=p=>setCart(c=>{const item=c.find(x=>x.id===p.id);return item?c.map(x=>x.id===p.id?{...x,qty:x.qty+1}:x):[...c,{...p,qty:1} ]});
- const changeQty=(id,d)=>setCart(c=>c.map(x=>x.id===id?{...x,qty:x.qty+d}:x).filter(x=>x.qty>0));
- const place=()=>{if(!cart.length)return;if(channel==='hotline'&&(!phone.trim()||!address.trim()))return alert('Đơn hotline cần số điện thoại và địa chỉ giao.');const order={id:crypto.randomUUID(),code:'TC'+Date.now().toString().slice(-8),channel,items:cart.map(x=>({id:x.id,name:x.name,price:x.price,qty:x.qty})),total,note,customer,phone,address,appCode,shipping:deliveryFee,payment,status:'new',paid:channel==='grab'||channel==='shopee',createdAt:new Date().toISOString()};saveOrders([order,...orders]);setCart([]);setNote('');setCustomer('');setPhone('');setAddress('');setAppCode('');setShipping(0);setPage('orders')};
- const updateOrder=(id,updates)=>saveOrders(orders.map(o=>o.id===id?{...o,...updates}:o));
- const todays=orders.filter(o=>new Date(o.createdAt).toLocaleDateString('sv-SE')===today());
- const revenue=todays.filter(o=>o.paid && o.status!=='cancelled').reduce((s,o)=>s+o.total,0);
- const nav=[['pos','Bán hàng',ShoppingCart],['orders','Đơn hàng',ClipboardList],['kitchen','Pha chế',ChefHat],['menu','Sản phẩm',BookOpen],['reports','Báo cáo',LayoutDashboard]];
- const nameChannel=id=>channels.find(c=>c.id===id)?.name||id;
- return <div className="app"><aside className="sidebar"><div className="brand"><Coffee size={28}/><div><strong>TRẠM CÀ PHÊ</strong><small>Quản lý bán hàng</small></div></div><nav>{nav.map(([id,name,Icon])=><button key={id} className={page===id?'active':''} onClick={()=>setPage(id)}><Icon size={19}/><span>{name}</span>{id==='kitchen'&&orders.filter(o=>['new','preparing'].includes(o.status)).length>0&&<em>{orders.filter(o=>['new','preparing'].includes(o.status)).length}</em>}</button>)}</nav><div className="sidebar-foot">MVP thử nghiệm · Dữ liệu lưu trên thiết bị</div></aside>
- <main><header><div><p className="eyebrow">TRẠM CÀ PHÊ / QUẢN LÝ</p><h1>{nav.find(x=>x[0]===page)?.[1]}</h1></div><div className="today">{new Date().toLocaleDateString('vi-VN')}</div></header>
- {page==='pos'&&<div className="pos-layout"><section className="panel"><div className="panel-header"><h2>Chọn món</h2><div className="search"><Search size={17}/><input placeholder="Tìm đồ uống..." value={query} onChange={e=>setQuery(e.target.value)}/></div></div><div className="product-grid">{products.filter(p=>p.active&&p.name.toLowerCase().includes(query.toLowerCase())).map(p=><button className="product" key={p.id} onClick={()=>add(p)}><span className="product-icon"><Coffee size={24}/></span><span className="product-name">{p.name}</span><small>{p.category}</small><strong>{fmt(p.price)}</strong><span className="add-icon"><Plus size={16}/></span></button>)}</div></section><section className="panel cart"><h2>Đơn mới</h2><label>Kênh bán</label><div className="channel-grid">{channels.map(c=><button className={channel===c.id?'selected':''} onClick={()=>setChannel(c.id)} key={c.id}>{c.name}</button>)}</div>{channel==='hotline'&&<div className="form-stack"><input placeholder="Tên khách (tuỳ chọn)" value={customer} onChange={e=>setCustomer(e.target.value)}/><input placeholder="Số điện thoại *" value={phone} onChange={e=>setPhone(e.target.value)}/><input placeholder="Địa chỉ giao *" value={address} onChange={e=>setAddress(e.target.value)}/><input type="number" min="0" placeholder="Phí ship (đ)" value={shipping||''} onChange={e=>setShipping(Math.max(0,Number(e.target.value)))}/></div>}{(channel==='grab'||channel==='shopee')&&<input placeholder="Mã đơn trên app (tuỳ chọn)" value={appCode} onChange={e=>setAppCode(e.target.value)}/>}<div className="cart-items">{cart.length===0?<div className="empty">Chưa có món nào<br/><small>Chạm vào món để thêm vào đơn</small></div>:cart.map(x=><div className="cart-item" key={x.id}><div><strong>{x.name}</strong><small>{fmt(x.price)}</small></div><div className="quantity"><button onClick={()=>changeQty(x.id,-1)}><Minus size={14}/></button><b>{x.qty}</b><button onClick={()=>changeQty(x.id,1)}><Plus size={14}/></button></div></div>)}</div><textarea placeholder="Ghi chú pha chế / giao hàng" rows="2" value={note} onChange={e=>setNote(e.target.value)}/><label>Thanh toán</label><div className="payment"><button className={payment==='cash'?'selected':''} onClick={()=>setPayment('cash')}><Banknote size={16}/> Tiền mặt</button><button className={payment==='transfer'?'selected':''} onClick={()=>setPayment('transfer')}><Smartphone size={16}/> Chuyển khoản</button></div><div className="total"><span>Tổng đơn</span><strong>{fmt(total)}</strong></div><button className="primary" disabled={!cart.length} onClick={place}><Plus size={18}/> Tạo đơn hàng</button></section></div>}
- {page==='orders'&&<section className="panel"><div className="panel-header"><h2>Danh sách đơn hàng</h2><span className="muted">{orders.length} đơn</span></div><OrderList orders={orders} nameChannel={nameChannel} updateOrder={updateOrder}/></section>}
- {page==='kitchen'&&<section className="panel"><div className="panel-header"><h2>Hàng chờ pha chế</h2><span className="muted">{orders.filter(o=>['new','preparing'].includes(o.status)).length} đơn đang chờ</span></div><OrderList orders={orders.filter(o=>['new','preparing'].includes(o.status))} nameChannel={nameChannel} updateOrder={updateOrder} kitchen/></section>}
- {page==='menu'&&<section className="panel"><div className="panel-header"><h2>Quản lý menu</h2></div><form className="add-form" onSubmit={e=>{e.preventDefault();if(!newProduct.name.trim()||Number(newProduct.price)<=0)return;saveProducts([...products,{...newProduct,id:Date.now(),price:Number(newProduct.price),active:true}]);setNewProduct({name:'',price:'',category:'Cà phê'})}}><input required placeholder="Tên món" value={newProduct.name} onChange={e=>setNewProduct({...newProduct,name:e.target.value})}/><input required type="number" min="1000" placeholder="Giá bán" value={newProduct.price} onChange={e=>setNewProduct({...newProduct,price:e.target.value})}/><select value={newProduct.category} onChange={e=>setNewProduct({...newProduct,category:e.target.value})}><option>Cà phê</option><option>Trà</option><option>Khác</option></select><button className="primary"><Plus size={17}/> Thêm món</button></form><div className="menu-list">{products.map(p=><div className="menu-row" key={p.id}><div><strong>{p.name}</strong><small>{p.category}</small></div><input aria-label={'Giá '+p.name} type="number" min="0" value={p.price} onChange={e=>saveProducts(products.map(x=>x.id===p.id?{...x,price:Number(e.target.value)}:x))}/><label className="toggle"><input type="checkbox" checked={p.active} onChange={e=>saveProducts(products.map(x=>x.id===p.id?{...x,active:e.target.checked}:x))}/> Đang bán</label></div>)}</div></section>}
- {page==='reports'&&<><div className="stats"><div className="stat"><small>Doanh thu đã thu hôm nay</small><strong>{fmt(revenue)}</strong></div><div className="stat"><small>Đơn hôm nay</small><strong>{todays.length}</strong></div><div className="stat"><small>Đơn đang xử lý</small><strong>{orders.filter(o=>['new','preparing','ready'].includes(o.status)).length}</strong></div></div><section className="panel"><h2>Doanh thu hôm nay theo kênh</h2><div className="breakdown">{channels.map(c=>{const v=todays.filter(o=>o.channel===c.id&&o.paid&&o.status!=='cancelled').reduce((s,o)=>s+o.total,0);return <div className="break-row" key={c.id}><div><span>{c.name}</span><strong>{fmt(v)}</strong></div><div className="bar"><div style={{width:`${revenue?v/revenue*100:0}%`}}/></div></div>})}</div><p className="hint">Dữ liệu này chỉ lưu trong trình duyệt đang sử dụng; chưa đồng bộ giữa điện thoại và PC. Doanh thu app chưa trừ phí nền tảng.</p></section></>}
- </main><footer className="mobile-nav">{nav.map(([id,name,Icon])=><button key={id} className={page===id?'active':''} onClick={()=>setPage(id)}><Icon size={19}/><span>{name}</span></button>)}</footer></div>
+const dateTime = value => new Date(value).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+function App() {
+  const [page, setPage] = useState('pos');
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
+  const working = useRef(false);
+  const draftId = useRef(crypto.randomUUID());
+  const [cart, setCart] = useState([]);
+  const [channel, setChannel] = useState('store');
+  const [query, setQuery] = useState('');
+  const [note, setNote] = useState('');
+  const [customer, setCustomer] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [appCode, setAppCode] = useState('');
+  const [paid, setPaid] = useState(false);
+  const [day, setDay] = useState(businessDate);
+
+  function refresh() {
+    try { setData(repository.read()); setError(''); }
+    catch (err) { setData(null); setError(err.message); }
+  }
+  useEffect(() => {
+    refresh();
+    const sync = event => { if (event.key === null || event.key.startsWith('tram_')) refresh(); };
+    window.addEventListener('storage', sync);
+    window.addEventListener('focus', refresh);
+    return () => { window.removeEventListener('storage', sync); window.removeEventListener('focus', refresh); };
+  }, []);
+
+  async function perform(operation, success) {
+    if (working.current) return false;
+    working.current = true;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await operation();
+      setData(repository.read());
+      success?.();
+      return true;
+    } catch (err) { setError(err.message || 'Không lưu được. Giỏ và dữ liệu gốc được giữ nguyên.'); return false; }
+    finally { working.current = false; setBusy(false); }
+  }
+  function add(product) {
+    if (busy) return;
+    setError('');
+    setCart(current => {
+      const found = current.find(item => item.id === product.id);
+      if (found?.qty === 999) return current;
+      return found ? current.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item)
+        : [...current, { id: product.id, name: product.name, price: product.price, qty: 1 }];
+    });
+  }
+  function changeQty(id, delta) {
+    setCart(current => current.flatMap(item => {
+      if (item.id !== id) return [item];
+      if (item.qty + delta === 0) return [];
+      return [{ ...item, qty: quantity(Math.min(999, item.qty + delta)) }];
+    }));
+  }
+  function changeChannel(next) {
+    setChannel(next); setCustomer(''); setPhone(''); setAddress(''); setAppCode('');
+  }
+  function place() {
+    const draft = { id: draftId.current, items: cart, channel, note, customer, phone, address, appCode, paid };
+    void perform(() => repository.create(draft), () => {
+      draftId.current = crypto.randomUUID();
+      setCart([]); setNote(''); setCustomer(''); setPhone(''); setAddress(''); setAppCode(''); setPaid(false);
+      setNotice('Đã lưu đơn trên trình duyệt này.'); setPage('orders');
+    });
+  }
+  function updateCart() {
+    setCart(current => current.flatMap(item => {
+      const product = data.products.find(p => p.id === item.id && p.active);
+      return product ? [{ ...item, name: product.name, price: product.price }] : [];
+    }));
+    setError(''); setNotice('Đã cập nhật giỏ theo menu hiện tại. Kiểm tra tổng trước khi lưu.');
+  }
+  let total = 0;
+  let totalError = '';
+  try { total = cart.length ? totalItems(cart) : 0; } catch (err) { totalError = err.message; }
+  const reportResult = useMemo(() => {
+    if (!data || page !== 'reports') return {};
+    try { return { summary: report(data.orders, day) }; }
+    catch (err) { return { error: err.message }; }
+  }, [data, day, page]);
+  const summary = reportResult.summary;
+  function navButtons() {
+    return navigation.map(([id, name, Icon]) => <button key={id} aria-current={page === id ? 'page' : undefined}
+      className={page === id ? 'active' : ''} onClick={() => setPage(id)}><Icon size={19} aria-hidden="true"/><span>{name}</span></button>);
+  }
+  return <div className="app">
+    <aside className="sidebar"><div className="brand"><Coffee size={28}/><div><strong>TRẠM CÀ PHÊ</strong><small>Quản lý bán hàng</small></div></div>
+      <nav aria-label="Điều hướng chính">{navButtons()}</nav><div className="sidebar-foot">Một quán · Bốn kênh bán</div></aside>
+    <main>
+      <header><div><p className="eyebrow">TRẠM CÀ PHÊ / POS DEMO</p><h1>{navigation.find(item => item[0] === page)[1]}</h1></div><span className="today">{businessDate()}</span></header>
+      <p className="demo-banner">Bản demo · Dữ liệu chỉ lưu trong trình duyệt này, chưa đồng bộ PC/điện thoại, chưa có backend và phân quyền. Không dùng bán hàng thật hoặc nhập thông tin khách thật.</p>
+      {error && <div role="alert" className="alert">{error}</div>}
+      {notice && <p role="status" className="notice">{notice}</p>}
+      {!data && <section className="panel"><p>Chưa đọc được dữ liệu. Không tự xóa hay thay thế lịch sử.</p><button onClick={refresh}>Đọc lại dữ liệu</button></section>}
+      {data && page === 'pos' && <div className="pos-layout">
+        <section className="panel"><div className="panel-header"><h2>Chọn món</h2><div className="search"><Search size={17}/><input aria-label="Tìm đồ uống" placeholder="Tìm đồ uống…" value={query} onChange={e => setQuery(e.target.value)}/></div></div>
+          <div className="product-grid">{data.products.filter(p => p.active && p.name.toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi'))).map(product =>
+            <button disabled={busy} className="product" key={product.id} onClick={() => add(product)}><span className="product-icon"><Coffee size={22}/></span><span className="product-name">{product.name}</span><small>{product.category}</small><strong>{fmt(product.price)}</strong><span className="add-icon"><Plus size={16}/></span></button>)}</div>
+          {!data.products.some(p => p.active && p.name.toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi'))) && <p className="empty">Không có món phù hợp.</p>}
+        </section>
+        <section className="panel cart"><h2>Đơn mới</h2><fieldset disabled={busy}><legend>Kênh bán</legend><div className="channel-grid">{channels.map(c => <button key={c.id} aria-pressed={channel === c.id} className={channel === c.id ? 'selected' : ''} onClick={() => changeChannel(c.id)}>{c.name}</button>)}</div></fieldset>
+          <fieldset disabled={busy} className="form-stack"><legend>Thông tin đơn</legend>
+            {channel === 'hotline' && <><label>Tên khách (tùy chọn)<input value={customer} onChange={e => setCustomer(e.target.value)}/></label><label>Số điện thoại *<input type="tel" value={phone} onChange={e => setPhone(e.target.value)}/></label><label>Địa chỉ giao *<input value={address} onChange={e => setAddress(e.target.value)}/></label></>}
+            {channel === 'app' && <label>Mã đơn App (tùy chọn)<input value={appCode} onChange={e => setAppCode(e.target.value)}/><small>Nhập thủ công; không kết nối app giao hàng.</small></label>}
+          </fieldset>
+          <div className="cart-items">{cart.length === 0 ? <p className="empty">Chọn món để bắt đầu</p> : cart.map(item => <div className="cart-item" key={item.id}><div><strong>{item.name}</strong><small>{fmt(item.price)} / món</small></div><div className="quantity"><button disabled={busy} aria-label={`Giảm ${item.name}`} onClick={() => changeQty(item.id, -1)}><Minus size={14}/></button><b>{item.qty}</b><button disabled={busy || item.qty >= 999} aria-label={`Tăng ${item.name}`} onClick={() => changeQty(item.id, 1)}><Plus size={14}/></button></div></div>)}</div>
+          <button className="text-button" disabled={busy || !cart.length} onClick={updateCart}>Cập nhật giỏ theo menu</button>
+          <label className="field-label">Ghi chú đơn<textarea disabled={busy} rows={2} value={note} onChange={e => setNote(e.target.value)}/></label>
+          <label className="paid-choice"><input type="checkbox" disabled={busy} checked={paid} onChange={e => setPaid(e.target.checked)}/> Đã thanh toán</label>
+          <div className="total"><span>Tổng đơn</span><strong>{totalError ? 'Vượt giới hạn' : fmt(total)}</strong></div>{totalError && <p role="alert">{totalError}</p>}<button className="primary" disabled={busy || !cart.length || Boolean(totalError)} onClick={place}><Plus size={18}/>{busy ? 'Đang lưu…' : 'Lưu đơn hàng'}</button>
+        </section>
+      </div>}
+      {data && page === 'orders' && <section className="panel"><div className="panel-header"><h2>Đơn đã lưu</h2><span className="muted">{data.orders.length} đơn</span></div>
+        {!data.orders.length && <p className="empty">Chưa có đơn hàng</p>}<div className="order-list">{data.orders.map(order => <article className="order" key={order.storageId}>
+          <div className="order-head"><div><strong className="order-code" title={order.code || order.id}>#{order.code || order.id}</strong><small>{channelName(order.channel)} · {dateTime(order.createdAt)}</small></div><span className={`status ${order.cancelled ? 'cancelled' : order.paid ? 'paid' : ''}`}>{order.cancelled ? 'Đã hủy (đơn cũ)' : order.paid ? 'Đã thanh toán' : 'Chưa thanh toán'}</span></div>
+          <div className="order-items">{order.items.map((item, index) => <div key={index}>{item.qty} × {item.name} · {fmt(item.price)}</div>)}</div>
+          {order.note && <p className="order-note">Ghi chú: {order.note}</p>}
+          {order.channel === 'hotline' && <p className="order-note">Giao: {order.customer} · {order.phone} · {order.address}</p>}
+          {order.appCode && <p className="order-note">Mã App: {order.appCode}</p>}
+          {order.paid && <p className="order-note">{order.paidAt ? `Thanh toán: ${dateTime(order.paidAt)}` : 'Đơn cũ: chưa biết thời điểm thanh toán.'}</p>}
+          {order.legacy?.shipping > 0 && <p className="order-note">Tổng lịch sử giữ nguyên, gồm phí giao cũ {fmt(order.legacy.shipping)}.</p>}
+          <div className="order-bottom"><strong>{fmt(order.total)}</strong>{!order.cancelled && !order.paid && <div className="actions"><button disabled={busy} onClick={() => { if (window.confirm('Xác nhận đã nhận đủ tiền cho đơn này?')) void perform(() => repository.pay(order.storageId), () => setNotice('Đã ghi nhận thanh toán.')); }}><Check size={16}/> Xác nhận đã thanh toán</button></div>}</div>
+        </article>)}</div></section>}
+      {data && page === 'menu' && <section className="panel"><h2>Sản phẩm</h2><ProductForm busy={busy} onSave={product => perform(() => repository.addProduct(product), () => setNotice('Đã thêm món.'))}/>
+        {data.products.map(product => <ProductRow key={product.id} product={product} busy={busy} onSave={changes => perform(() => repository.updateProduct(product.id, changes), () => setNotice('Đã cập nhật món; đơn cũ giữ nguyên giá.'))}/>)}</section>}
+      {reportResult.error && <p role="alert" className="alert">Không tính được báo cáo: {reportResult.error}</p>}
+      {summary && page === 'reports' && <><div className="report-filter"><label>Ngày báo cáo (giờ Việt Nam)<input type="date" value={day} onChange={e => { if (e.target.value) setDay(e.target.value); }}/></label></div>
+        <div className="stats">{[['Doanh số đơn ngày', summary.sales], ['Đã thanh toán của đơn ngày', summary.paid], ['Chưa thanh toán của đơn ngày', summary.unpaid]].map(([label, value]) => <div className="stat" key={label}><small>{label}</small><strong>{fmt(value)}</strong></div>)}</div>
+        <section className="panel"><h2>Doanh số theo kênh · {summary.count} đơn</h2><div className="table-scroll"><table><thead><tr><th>Kênh</th><th>Đơn</th><th>Doanh số</th><th>Đã thanh toán</th><th>Chưa thanh toán</th></tr></thead><tbody>{summary.rows.map(row => <tr key={row.id}><th scope="row">{row.name}</th><td>{row.count}</td><td>{fmt(row.sales)}</td><td>{fmt(row.paid)}</td><td>{fmt(row.unpaid)}</td></tr>)}</tbody></table></div>
+          <p>Khoản thanh toán ghi nhận trong ngày: <strong>{fmt(summary.received)}</strong></p><p className="hint">Doanh số theo ngày tạo đơn; khoản thanh toán theo thời điểm xác nhận thu, có thể gồm đơn ngày trước. Đơn hủy cũ không tính. Tổng đã/chưa thanh toán phản ánh trạng thái hiện tại của đơn ngày.</p>
+          {summary.unknownPaidAt > 0 && <p className="hint">Có {summary.unknownPaidAt} đơn cũ đã thanh toán chưa biết ngày thu; không đưa vào khoản thanh toán ghi nhận theo ngày.</p>}
+          {summary.legacyTotals > 0 && <p className="hint">Có {summary.legacyTotals} đơn ngày có phí giao cũ; giữ nguyên tổng lịch sử.</p>}
+        </section></>}
+    </main><nav className="mobile-nav" aria-label="Điều hướng điện thoại">{navButtons()}</nav>
+  </div>;
 }
-function OrderList({orders,nameChannel,updateOrder,kitchen=false}){if(!orders.length)return <div className="empty">Chưa có đơn hàng</div>;return <div className="order-list">{orders.map(o=><article className="order" key={o.id}><div className="order-head"><div><strong>#{o.code}</strong><small>{nameChannel(o.channel)} · {new Date(o.createdAt).toLocaleString('vi-VN')}</small></div><span className={'status '+o.status}>{({new:'Mới',preparing:'Đang pha',ready:'Đã xong',done:'Hoàn tất',cancelled:'Đã hủy'})[o.status]}</span></div><div className="order-items">{o.items.map((x,i)=><div key={i}>{x.qty} × {x.name}</div>)}</div>{o.note&&<p className="order-note">Ghi chú: {o.note}</p>}{o.channel==='hotline'&&<p className="order-note">Giao: {o.customer} · {o.phone} · {o.address}</p>}{o.appCode&&<p className="order-note">Mã app: {o.appCode}</p>}<div className="order-bottom"><strong>{fmt(o.total)}</strong><div className="actions">{o.status==='new'&&<button onClick={()=>updateOrder(o.id,{status:'preparing'})}>Bắt đầu pha</button>}{o.status==='preparing'&&<button onClick={()=>updateOrder(o.id,{status:'ready'})}><Check size={15}/> Pha xong</button>}{!kitchen&&o.status==='ready'&&<button onClick={()=>updateOrder(o.id,{status:'done'})}>Hoàn tất</button>}{!kitchen&&!o.paid&&!['cancelled'].includes(o.status)&&<button onClick={()=>updateOrder(o.id,{paid:true})}>Đã thu tiền</button>}{!kitchen&&['new','preparing'].includes(o.status)&&<button className="danger" onClick={()=>{if(confirm('Hủy đơn này?'))updateOrder(o.id,{status:'cancelled'})}}><X size={15}/> Hủy</button>}</div></div></article>)}</div>}
+function ProductForm({ busy, onSave }) {
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [category, setCategory] = useState('Cà phê');
+  const [error, setError] = useState('');
+  return <form className="add-form" onSubmit={async event => {
+    event.preventDefault(); setError('');
+    try {
+      const product = { id: crypto.randomUUID(), name: name.trim(), price: parsePrice(price), category, active: true };
+      if (!product.name) throw new Error('Nhập tên món.');
+      if (await onSave(product)) { setName(''); setPrice(''); }
+    } catch (err) { setError(err.message); }
+  }}><label>Tên món<input required disabled={busy} value={name} onChange={e => setName(e.target.value)}/></label><label>Giá (VND)<input required inputMode="numeric" disabled={busy} value={price} onChange={e => setPrice(e.target.value)}/></label><label>Nhóm<select disabled={busy} value={category} onChange={e => setCategory(e.target.value)}><option>Cà phê</option><option>Trà</option><option>Khác</option></select></label><button className="primary" disabled={busy}>Thêm món</button>{error && <p role="alert">{error}</p>}</form>;
+}
+function ProductRow({ product, busy, onSave }) {
+  const [price, setPrice] = useState(String(product.price));
+  const [error, setError] = useState('');
+  useEffect(() => { setPrice(String(product.price)); }, [product.price]);
+  return <div className="menu-row"><div><strong>{product.name}</strong><small>{product.category}</small></div><form className="price-form" onSubmit={event => {
+    event.preventDefault(); setError('');
+    try { void onSave({ price: parsePrice(price) }); } catch (err) { setError(err.message); }
+  }}><input aria-label={`Giá ${product.name}`} inputMode="numeric" disabled={busy} value={price} onChange={e => setPrice(e.target.value)}/><button disabled={busy}>Lưu giá</button>{error && <span role="alert">{error}</span>}</form><label className="toggle"><input type="checkbox" disabled={busy} checked={product.active} onChange={event => void onSave({ active: event.target.checked })}/> Đang bán</label></div>;
+}
 
 createRoot(document.getElementById('root')).render(<App/>);
