@@ -752,3 +752,35 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 }
 
 }
+
+/* Keep mobile labels readable; desktop nav styles must not spill into the dock. */
+@media (max-width: 700px) {
+  .mobile-nav {
+    gap: 2px;
+  }
+  .mobile-nav button {
+    min-width: 0;
+    padding: 8px 2px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .mobile-nav button.active,
+  .mobile-nav button:hover {
+    background: #e9f6ee;
+    color: #1d7954;
+  }
+}
+
+/* A short viewport needs scrolling space, not a dock over the save button. */
+@media (max-width: 700px) and (max-height: 500px) {
+  .app {
+    flex-direction: column;
+  }
+  main {
+    padding-bottom: 24px;
+  }
+  .mobile-nav {
+    position: static;
+    width: 100%;
+  }
+}
