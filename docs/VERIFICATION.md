@@ -84,3 +84,26 @@ Bằng chứng xem nhanh:
 ## Preview review
 
 PR: https://github.com/phmjhy/tram-ca-phe/pull/2 (Draft). Vercel Preview alias: https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app . Deployment đầu f6dabc4 build READY, static HTML200, nhưng API version/me404 do thiếu rewrite; bản sửa routing nằm cùng PR. Trạng thái route sau sửa được ghi ở PR review. Không có cloud DB/auth; không đánh dấu cloud đồng bộ PASS.
+
+## PR #2 — vòng mở khóa Neon Preview (28/10/2026)
+
+Phạm vi: cấu hình/test hiện có, không thêm tính năng. Hướng dẫn thao tác chủ quán và operator: [PREVIEW_SETUP.md](PREVIEW_SETUP.md).
+
+| Kiểm tra thực tế vòng này | Kết quả | Bằng chứng |
+|---|---|---|
+| Nhánh feature/cafe-management, working tree trước tài liệu | PASS | git status sạch; không main |
+| Biến bắt buộc theo source | PASS | server/config.js: DATABASE_URL, BETTER_AUTH_SECRET>=32, APP_ORIGIN hoặc VERCEL_URL; scripts cần APP_ENV=preview |
+| Vercel branch env metadata, decrypt=false | BLOCKED cấu hình | envs=[]; hiddenProductionEnvCount=0 |
+| Integration configurations team tramsac | BLOCKED kết nối | [] (không kết luận về Neon ngoài tài khoản/kết nối này) |
+| Cấu hình operator local | BLOCKED | không .env.local/.env.preview.local; các key DB/auth không có trong process; chưa có Vercel CLI |
+| GET alias /api/v1/version | PASS routing | 200, build a06ccb8ce8f3e054ecb5e407fc384ca10f38a057, configured=false |
+| GET alias /api/v1/me | BLOCKED | 503 CONFIGURATION_REQUIRED, JSON ứng dụng; không còn404 |
+| SQL preflight DB Preview / migration000–002 | BLOCKED, chưa chạy | chưa có DB identity/quyền/credential Preview |
+| Provision OWNER + STAFF qua script hiện có | BLOCKED, chưa chạy | không password hardcode, chưa có private env |
+| Cloud login và role403, món/recipe/trừ kho/thanh toán/nhập hàng/dashboard | BLOCKED, chưa chạy | phụ thuộc DB/auth/user thử |
+| Cloud đăng ký ca/check-in/out | BLOCKED, chưa chạy | phụ thuộc DB/auth/user thử |
+| Hai phiên độc lập cùng alias, tự đồng bộ | BLOCKED, chưa chạy | local E2E cũ không tính thành cloud PASS |
+
+Không phát hiện bug nghiệp vụ mới từ vòng kiểm tra này vì backend vẫn chưa qua bước cấu hình. Nguồn có rủi ro thao tác cần tránh: nếu để fallback VERCEL_URL nhưng test ở alias nhánh, Origin sẽ khác; đã hướng dẫn đặt APP_ORIGIN đúng alias cố định, không mở wildcard hoặc sửa tính năng auth.
+
+Các số42 unit/integration và21 E2E ở phần trên là lần chạy **local trước**, không chạy lại và không đổi thành kết quả cloud trong vòng này. Chỉ cập nhật tài liệu; không cần chạy lại tests/build ứng dụng khi không có thay đổi code.
