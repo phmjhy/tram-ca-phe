@@ -25,7 +25,7 @@ Test tạo PostgreSQL native tạm qua `embedded-postgres`, không mock/emulator
 5. Nếu cần DEMO local, database nghiệp vụ phải rỗng: APP_ENV=test hoặc development, CONFIRM_DEMO=YES, DEMO_OWNER_EMAIL là owner thử nghiệm; `npm run db:seed:demo`. Script từ chối mọi Vercel deployment và database đã có menu/kho. Công thức/giá trong seed là dữ liệu minh họa, không dùng cho quán thật.
 6. `npm run build` rồi `npm start`: UI + API tại http://127.0.0.1:4176. `npm run dev` chỉ frontend Vite.
 
-Vercel dùng Functions `api/[...path].js`, driver pg qua pooled URL/TLS của Neon. Preview dùng APP_ORIGIN hoặc VERCEL_URL đúng deployment, không wildcard origin. Không có credentials ở frontend. Chưa có cloud database; UI báo lỗi cấu hình thay vì sinh dữ liệu giả. Production hiện vẫn là main cũ và không bị thay đổi.
+Vercel dùng Functions `api/[...path].js` và rewrite `/api/:path*` trong `vercel.json`, driver pg qua pooled URL/TLS của Neon. Preview dùng APP_ORIGIN hoặc VERCEL_URL đúng deployment, không wildcard origin. Không có credentials ở frontend. Chưa có cloud database; UI báo lỗi cấu hình thay vì sinh dữ liệu giả. Production hiện vẫn là main cũ và không bị thay đổi.
 
 ## Kiểm thử browser
 

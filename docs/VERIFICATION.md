@@ -62,6 +62,7 @@ Bằng chứng xem nhanh:
 
 - High: nguy cơ lưu lại sau server commit nhưng mất phản hồi/reload — body/key pending giữ sessionStorage theo user, retry cùng key; browser đã mô phỏng.
 - Medium: thiếu import CSS ở entry mới — khôi phục, build có CSS, screenshot kiểm tra.
+- High: Preview thực trả404 cho /api/v1/* vì file catch-all được định tuyến tĩnh — thêm rewrite Vercel tới Function. Endpoint cấu hình phải trả JSON503 khi chưa có DB, không404.
 - Medium: nhãn select lồng options không match chính xác accessible label — thêm aria-label.
 - High: endpoint expense lỗi truy vấn vì tên cột ngày bị lặp sau định dạng ngày — chọn cột tường minh; bổ sung integration test danh sách và ngày chi phí.
 - Test script: chờ chữ “Đã thanh toán” từng match nút của đơn chưa thu — đổi sang dòng trạng thái; không tính kết quả lần chạy lỗi là PASS.
@@ -79,3 +80,7 @@ Bằng chứng xem nhanh:
 | Low | iOS/Android thực, bàn phím ảo, audit accessibility chuyên sâu | Chưa kiểm chứng |
 
 Đủ để review code và demo **cục bộ với dữ liệu TEST** khi kết quả cuối PASS. Chưa đủ để đưa quán vào vận hành thật hoặc merge/production release không kiểm tra cloud. Kết quả PR #1 cũ lưu riêng ở docs/PR1_VERIFICATION.md; không áp dụng giao diện/kênh cũ cho phiên bản này.
+
+## Preview review
+
+PR: https://github.com/phmjhy/tram-ca-phe/pull/2 (Draft). Vercel Preview alias: https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app . Deployment đầu f6dabc4 build READY, static HTML200, nhưng API version/me404 do thiếu rewrite; bản sửa routing nằm cùng PR. Trạng thái route sau sửa được ghi ở PR review. Không có cloud DB/auth; không đánh dấu cloud đồng bộ PASS.
