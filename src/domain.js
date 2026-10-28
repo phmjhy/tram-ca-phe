@@ -12,7 +12,7 @@ export const seed = [
   { id: 5, name: 'Trà tắc', category: 'Trà', price: 22000, active: true },
   { id: 6, name: 'Matcha latte', category: 'Khác', price: 39000, active: true },
 ];
-export const fmt = value => new Intl.NumberFormat('vi-VN').format(value) + 'đ';
+export const fmt = value => new Intl.NumberFormat('vi-VN').format(typeof value === 'string' && /^\d+$/.test(value) ? BigInt(value) : value) + 'đ';
 export const channelName = id => channels.find(channel => channel.id === id)?.name ?? 'Kênh cũ khác';
 export function money(value) {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {

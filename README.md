@@ -1,35 +1,38 @@
-# Trạm Cà Phê — POS demo
+# Trạm Cà Phê
 
-React + Vite cho một quán nhỏ, giao diện PC/mobile. Bốn kênh: **Tại quán, Mang đi, App, Hotline**. Đơn App nhập tay; không tích hợp API app giao hàng. Không quản lý bàn, đa chi nhánh, CRM hoặc pha chế.
+Một web React + Vite cho quán nhỏ, OWNER/STAFF, PostgreSQL chung qua API Vercel. Yêu cầu hiện hành: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Không chọn kênh bán, bàn/bếp/mã giao dịch/phương thức thu tiền trên UI.
+
+STAFF: Bán hàng, Ca làm. OWNER: Bán hàng, Dashboard, Kho & Menu, Chi phí, Nhân viên. Không fallback sang localStorage khi backend lỗi. Khóa cũ vẫn được giữ nguyên trên thiết bị; không tự import vào DB.
 
 ## Chạy và kiểm tra
 
+Node 24, dependency theo lockfile:
+
 ```sh
 npm ci
-npm run dev
 npm test
 npm run build
-npm run preview
 ```
 
-`npm test` dùng Node test runner, không thêm framework. Các test JSX dùng esbuild có sẵn qua Vite để chạy handler của component trong bộ giả lập hooks, không thay thế browser E2E. Chưa có lint/typecheck script. Dùng Node 24 như môi trường kiểm tra hiện tại.
+Test tạo PostgreSQL native tạm qua `embedded-postgres`, không mock/emulator, không dùng DATABASE_URL có sẵn. Cần quyền initdb/postgres và cổng loopback. Cluster tự dừng/xóa sau test. Không tạo user hệ điều hành. Repo chưa có lint/typecheck riêng (JavaScript).
 
-## Nghiệp vụ
+## Backend thử nghiệm
 
-Chọn món → chọn kênh → lưu đơn (mặc định chưa thanh toán) → xác nhận đã thanh toán. Có thể đánh dấu đã thanh toán ngay khi lưu, ghi `paidAt`. Không có phí ship hoặc lựa chọn tiền mặt/chuyển khoản. Giá món được snapshot khi tạo đơn; sửa menu không sửa lịch sử.
+1. Chuẩn bị PostgreSQL/Neon thử nghiệm riêng. Không dùng dữ liệu khách hoặc database production.
+2. Tạo `.env.local` theo `.env.example`; điền secret trực tiếp tại nơi quản lý secret: DATABASE_URL, BETTER_AUTH_SECRET >=32 ký tự, APP_ORIGIN chính xác, APP_ENV=development/preview. Không đặt tiền tố VITE_; không đưa giá trị vào chat/log/Git.
+3. `npm run db:migrate`: checksum/advisory lock/transaction; chặn môi trường production. Không tự migrate trong build/request.
+4. Cấp user bằng `npm run user:create`, qua biến riêng POS_USER_EMAIL, POS_USER_PASSWORD >=12 ký tự, POS_USER_NAME, POS_USER_ROLE=owner|staff. Không tài khoản mặc định, không public signup. Script chặn production.
+5. Nếu cần DEMO local, database nghiệp vụ phải rỗng: APP_ENV=test hoặc development, CONFIRM_DEMO=YES, DEMO_OWNER_EMAIL là owner thử nghiệm; `npm run db:seed:demo`. Script từ chối mọi Vercel deployment và database đã có menu/kho. Công thức/giá trong seed là dữ liệu minh họa, không dùng cho quán thật.
+6. `npm run build` rồi `npm start`: UI + API tại http://127.0.0.1:4176. `npm run dev` chỉ frontend Vite.
 
-Báo cáo theo ngày Việt Nam: doanh số đơn và phần đã/chưa thanh toán của các đơn tạo trong ngày; khoản thanh toán theo `paidAt` được trình bày riêng.
+Vercel dùng Functions `api/[...path].js`, driver pg qua pooled URL/TLS của Neon. Preview dùng APP_ORIGIN hoặc VERCEL_URL đúng deployment, không wildcard origin. Không có credentials ở frontend. Chưa có cloud database; UI báo lỗi cấu hình thay vì sinh dữ liệu giả. Production hiện vẫn là main cũ và không bị thay đổi.
 
-Chi tiết: [Yêu cầu, database đề xuất, tương thích và test](docs/REQUIREMENTS.md), [Audit bản gốc](AUDIT.md), [Kết quả kiểm tra thay đổi](docs/VERIFICATION.md).
+## Kiểm thử browser
 
-## Dữ liệu và giới hạn
+```sh
+node e2e/management.mjs --playwright=/private/tmp/tram-pos-browser/node_modules/playwright/index.mjs
+```
 
-**Chỉ là demo localStorage. Không dùng bán hàng thật hoặc nhập thông tin khách thật. Chưa có backend, PostgreSQL, đăng nhập hay phân quyền; không đồng bộ PC/điện thoại.**
+Cần Playwright và Chrome; đường dẫn có thể thay qua tham số và POS_CHROME_PATH. Runner tự tạo DB/user DEMO/HTTP riêng, hai browser context độc lập, PC 1440×900/mobile 390×844 và 320×640. Kết quả/screenshot tại docs/management-evidence. Không lưu cookie/password/DB URL vào artifact. Script e2e/verify.mjs và ảnh docs/evidence là lịch sử PR #1 localStorage, **không** chứng minh backend hiện tại.
 
-- Khóa dữ liệu cũ `tram_orders`, `tram_products` giữ nguyên, chỉ đọc. `grab`/`shopee` được hiển thị dưới App; giữ nguyên tổng tiền và snapshot cũ, kể cả tổng có phí giao. Không tự suy luận thời điểm thu cho đơn cũ.
-- Ghi mới theo từng `tram_order_v2:<storageId>` và `tram_products_v2`; không xóa/trộn các bản ghi cũ cùng ID. Dùng Web Locks để tránh race ở các tab cùng origin; storage event cập nhật view. Trình duyệt thiếu Web Locks chỉ xem được dữ liệu.
-- JSON/schema lỗi được báo rõ và chặn ghi; lỗi quota không xóa giỏ. Không tự sửa dữ liệu. Xóa dữ liệu trình duyệt vẫn gây mất dữ liệu; chưa có backup tự động.
-- Rollback UI cũ không đọc được ghi mới v2. Cần phương án xuất/import có review trước rollback hoặc migration thực tế.
-- PostgreSQL, API, transaction, backup và phân quyền vẫn là điều kiện bắt buộc trước triển khai vận hành thật; thiết kế trong tài liệu chỉ là đề xuất, chưa áp dụng database.
-
-Production branch vẫn `main`; Vercel build `npm run build`, output `dist`. PR này không cho phép merge hoặc deploy production tự động.
+Xem [docs/VERIFICATION.md](docs/VERIFICATION.md) để biết PASS/FAIL/BLOCKED thực tế, [BACKEND_PLAN.md](BACKEND_PLAN.md) cho schema/API/triển khai và giới hạn còn mở. Chưa đủ điều kiện vận hành production khi thiếu Neon, cloud test, dữ liệu thật được đối soát và backup/restore.

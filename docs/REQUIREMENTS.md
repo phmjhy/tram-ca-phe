@@ -1,61 +1,42 @@
-# Trạm Cà Phê — nghiệp vụ POS đơn giản
+# Trạm Cà Phê — yêu cầu hiện hành (28/10/2026)
 
-Ngày cập nhật: 24/10/2026. Thay thế các đề xuất về pha chế, tích hợp app và phí giao hàng trong AUDIT.md; audit vẫn là bằng chứng lịch sử của bản cũ.
+Nguồn: file yêu cầu “CODEX — Xây lại Trạm Cà Phê thành web quản lý quán đơn giản” do chủ quán cung cấp. Tài liệu này thay yêu cầu bốn kênh của PR #1: **không còn chọn kênh bán trên giao diện mới**.
 
-## A. Phạm vi và tiêu chí nghiệm thu
+## Vai trò và màn hình
 
-- React + Vite, một quán; đúng bốn kênh tạo đơn: `store` Tại quán, `takeaway` Mang đi, `app` App, `hotline` Hotline.
-- App nhập thủ công; mã đơn app tùy chọn. Không API GrabFood/ShopeeFood. Mã app có nhập phải duy nhất trong các đơn mới; dữ liệu trùng đã có không bị xóa.
-- Chỉ tạo/lưu đơn và xác nhận đã thanh toán. Đơn mới mặc định chưa thanh toán ở cả bốn kênh; có checkbox xác nhận đã thanh toán khi lưu. Không chọn tiền mặt/chuyển khoản. Không trạng thái pha chế, hoàn tất hoặc hủy mới.
-- Hotline giữ tên tùy chọn, điện thoại và địa chỉ bắt buộc; không trường ship, không cộng ship. Chuyển khỏi Hotline không lưu thông tin khách vào kênh khác.
-- Tổng đơn mới là tổng snapshot giá món × số lượng. Giá là số nguyên VND >= 0, số lượng nguyên từ 1 đến 999; tổng phải là safe integer. Không chấp nhận rỗng, NaN, Infinity, số âm hoặc số lẻ cho giá/số lượng.
-- Snapshot giá được chốt khi tạo đơn từ menu mới nhất. Nếu giá đổi trong khi nhập, yêu cầu cập nhật giỏ và xác nhận lại trước khi lưu; món bị tắt không thể chốt. Giá đơn đã lưu bất biến khi menu đổi.
-- Chống tạo trùng bằng khóa thao tác, ID giỏ dùng lại cho retry và kiểm tra mã app. Không chặn hai đơn giống món nhưng là hai lần bán có chủ ý. Dùng Web Locks cùng origin để tuần tự hóa thao tác; trình duyệt thiếu Web Locks chỉ được đọc và báo rõ khi ghi.
-- Đánh dấu đã thanh toán một chiều, có `paidAt` ISO; thao tác lặp giữ nguyên timestamp. Không tự coi App là đã thu; không tạo thời điểm thu giả cho lịch sử cũ.
-- Không quản lý bàn, đa chi nhánh, CRM; không thêm backend/framework trong PR UI này.
-- Đây vẫn là demo localStorage: không đồng bộ PC/điện thoại, chưa auth/phân quyền, không dùng bán hàng thật hoặc thông tin khách thật. Giữ thông báo này trên cả PC/mobile.
+- STAFF: **Bán hàng | Ca làm**.
+- OWNER: **Bán hàng | Dashboard | Kho & Menu | Chi phí | Nhân viên**.
+- Một frontend React + Vite responsive, dùng chung PostgreSQL qua API. Không lấy localStorage làm dữ liệu kinh doanh chính.
+- Không bàn/bếp/in hóa đơn/mã đơn hiển thị/shipping/CRM/đa chi nhánh/luồng trạng thái phức tạp/API giao hàng.
 
-## Báo cáo cuối ngày (Asia/Ho_Chi_Minh)
+## Bán hàng
 
-Chọn ngày, mặc định ngày hiện tại của quán:
+Tìm tên, không dấu hoặc alias; `cafe` ra Cà phê. Chuột/touch hoặc Enter chọn kết quả đầu. Giá do menu cấp, +/- số lượng 1–999, xóa món, ghi chú mỗi món, tổng tự động, checkbox Đã thanh toán và nút Lưu. Không nhập mã, ngày giờ, kênh hoặc phương thức thu tiền.
 
-1. **Doanh số đơn ngày:** tổng giá trị đơn được tạo trong ngày, kể cả chưa thanh toán; loại đơn cũ đã hủy.
-2. **Đã thanh toán của đơn ngày / Chưa thanh toán của đơn ngày:** chia doanh số đơn theo trạng thái hiện tại; hai số cộng lại bằng doanh số. Khi thanh toán ngày sau, phần chia của ngày tạo đơn sẽ thay đổi.
-3. **Khoản thanh toán ghi nhận trong ngày:** dựa riêng vào `paidAt`, có thể gồm đơn ngày trước. Đây là chỉ số khác doanh số đơn; không suy luận paidAt từ createdAt.
-4. Bảng bốn kênh có số đơn, doanh số, đã thanh toán, chưa thanh toán; lịch sử kênh lạ có dòng riêng để không mất số liệu.
-5. Đơn cũ paid=true nhưng chưa có paidAt vẫn thuộc phần đã thanh toán của ngày tạo; không vào khoản thanh toán theo ngày, kèm số lượng cảnh báo. Tổng cũ có ship được giữ nguyên và chú thích, không sửa sổ lịch sử.
+Server tính lại giá theo version, chốt snapshot từng dòng; lưu giao dịch/món/tiêu hao công thức/thanh toán tùy chọn/audit/idempotency trong một transaction. Thiếu công thức, thiếu kho, giá cũ hoặc payload tiền tự nhập phải bị từ chối và rollback. Thanh toán sau chỉ tạo bản ghi tiền/paidAt, không tiêu hao thêm. OWNER hủy có lý do, audit, hoàn đúng lượng tiêu hao một lần. Hủy đã thu phải giữ chứng từ và cảnh báo đối soát hoàn tiền; không giả lập hoàn tiền.
 
-## B. Đề xuất database (chỉ thiết kế, chưa migration)
+Mất phản hồi: giữ nguyên body/key để thử lại, lưu pending draft trong sessionStorage theo user để reload không tạo key mới. Đây là bản chờ gửi/xác nhận, không phải kho dữ liệu kinh doanh. Không tự báo thành công trước khi server xác nhận. Không gửi offline.
 
-PostgreSQL qua backend API, credentials chỉ trên server. Không kết nối DB từ Vite/browser.
+## Kho & Menu (OWNER)
 
-- `products`: UUID, tên, nhóm, `price_vnd bigint CHECK >=0`, active, version, timestamps.
-- `orders`: UUID, unique idempotency_key, code unique, channel CHECK trong bốn kênh, created_at timestamptz do server cấp, total_vnd bigint CHECK >=0; thông tin Hotline chỉ tại đơn, app_reference nullable với unique index cho giá trị không rỗng. Không bảng CRM.
-- `order_items`: order_id, product_id nullable, name_snapshot, price_snapshot_vnd CHECK >=0, quantity CHECK 1..999. Transaction tạo đơn tính lại tổng và kiểm tra món/giá/version; không tin tổng client.
-- `order_payments`: unique order_id (phạm vi hiện tại thanh toán toàn phần một lần), amount_vnd, paid_at, actor_id, unique idempotency_key. Transaction cùng kiểm tra tổng; không phương thức tiền mặt/chuyển khoản trong yêu cầu hiện tại.
-- `users/roles`, `audit_events`: chủ quán sửa menu/xem báo cáo; thu ngân tạo đơn/ghi nhận thu; server kiểm tra quyền. Không vai trò pha chế.
-- `legacy_imports`: dữ liệu gốc, batch/source ID, checksum, thời gian import; giữ legacy channel/status/shipping/payment và paidAt chưa biết. Lưu cancelled cũ dưới metadata lịch sử, không mở workflow hủy mới. Import transaction có đối chiếu số lượng/tổng theo kênh/ngày và unique source ID.
-- Backup/restore được nghiệm thu trước dùng thật. Tiền nguyên VND, quy tắc timezone ở server, UI không tự phát minh timestamp. Migration production phải là công việc được review riêng.
+Menu gồm tên, alias, giá VND nguyên không âm, active (ngừng bán thay xóa lịch sử), note pha chế. Công thức tham chiếu nguyên liệu + lượng có tối đa 3 số lẻ; đơn vị giữ nguyên g/ml/cái của nguyên liệu, không tự đổi đơn vị.
 
-## B. Đề xuất giao diện
+Nguyên liệu: tên, đơn vị, tồn đầu, mức tối thiểu, đơn giá mỗi đơn vị. Nhập hàng: ngày, lượng dương, đơn giá, nhà cung cấp tùy chọn. Điều chỉnh: lượng có dấu, lý do bắt buộc, không tạo tồn âm. Sổ biến động bất biến gồm tồn đầu, nhập, điều chỉnh, tiêu hao, hoàn; tồn cache được cập nhật cùng transaction và khóa hàng theo thứ tự ID.
 
-Bốn màn hình: Bán hàng, Đơn hàng, Sản phẩm, Báo cáo. Sidebar PC, thanh đáy bốn mục mobile. POS gồm lưới món và giỏ, bốn kênh, thông tin theo kênh, ghi chú, checkbox đã thanh toán, tổng, nút lưu có trạng thái chờ. Đơn chỉ hiển thị đã/chưa thanh toán và nút xác nhận thu; đơn hủy cũ chỉ đọc. Sản phẩm lưu giá bằng form xác nhận, không ghi ở từng phím. Báo cáo có chọn ngày và nhãn phân biệt doanh số/khoản thu. Lỗi lưu giữ giỏ và hiển thị; chỉ cập nhật thành công sau persistence.
+Đề xuất mua xét mức tối thiểu và tiêu hao 7 ngày gần nhất. Giá vốn **ước tính theo giá nhập gần nhất tại lúc tiêu hao**, chốt trong ledger, chỉ OWNER xem. Chưa có phương pháp kế toán FIFO/thuế hoặc dự báo nâng cao.
 
-## C. Tương thích dữ liệu cũ
+## Ca làm
 
-- Không ghi đè/xóa `tram_orders`, `tram_products`; không chạy migration tự động khi load. Đọc và chuẩn hóa trong bộ nhớ, giữ raw legacy trong metadata khi có thao tác cập nhật.
-- `grab`/`shopee` => `app` ở view, giữ kênh gốc trong metadata. `store` và `hotline` giữ nguyên. ID lưu riêng theo vị trí bản ghi legacy để không gộp nhầm các ID/mã trùng; không deduplicate lịch sử.
-- Các trạng thái cũ new/preparing/ready/done không còn workflow, trạng thái thu theo paid; cancelled cũ giữ cờ lịch sử, không đưa doanh số và không cho thu tiền.
-- Giữ tổng tiền/snapshot/ship/payment/thông tin gốc; không trừ ship hoặc sửa paid cũ. paid=true không có paidAt => null, cảnh báo chưa biết ngày thu. Chỉ thao tác thu mới cấp paidAt.
-- Đơn mới/cập nhật dùng từng khóa `tram_order_v2:<storageId>`, version 2. Menu mới dùng `tram_products_v2`. Đọc legacy + overlay v2; không rewrite toàn bộ mảng đơn. Web Locks ngăn race giữa các tab hỗ trợ; storage event làm mới view. Không hứa đồng bộ thiết bị. Phải đóng các tab UI phiên bản cũ trước thử chuyển đổi; writer bản cũ không tham gia Web Locks và có thể sửa legacy source.
-- JSON/schema hỏng: báo lỗi, khóa ghi và không fallback mảng rỗng; giữ nguyên dữ liệu gốc. Quota/storage denied: lỗi rõ ràng, không xóa giỏ hay báo thành công. Không tự sửa hoặc loại dữ liệu lỗi.
-- Rollback về UI cũ vẫn thấy dữ liệu gốc nhưng không thấy ghi mới v2; cần xuất/import có review khi rollback thực tế. Không dual-write vào mảng cũ vì có thể ghi đè dữ liệu; không tự deploy nhánh này.
+STAFF đăng ký khung ngày giờ (tối đa 24h, không trùng lịch), xem ca của mình theo ngày/tuần/tháng, check-in/out theo giờ server, tổng giờ từ thời điểm thực tế. Mỗi người tối đa một ca đang check-in. OWNER xem mọi ca, sửa giờ thực tế với lý do/version/audit. Không payroll/GPS.
 
-## D. Test cần chạy
+## Chi phí và Dashboard (OWNER)
 
-- Domain: đúng bốn kênh; mọi kênh mặc định unpaid; chọn paid cấp paidAt; thu lặp idempotent; snapshot và totals; zero/negative/fraction/NaN/Infinity/overflow/qty 0/1000; Hotline required, không ship/phương thức.
-- Idempotency: submit đôi, retry, trùng app reference; hai đơn giống món có chủ ý; hai tab tạo/thu đồng thời không mất đơn và giữ paidAt; lỗi storage/retry.
-- Migration: mọi trạng thái/kênh legacy, cancelled, paidAt unknown, tổng có ship, duplicate IDs, unknown channel, raw không thay đổi, overlay giữ lịch sử, reload, JSON/schema hỏng chặn ghi.
-- Reports: bốn kênh, paid + unpaid = sales, cancelled loại, paidAt ngày sau/đơn ngày trước, ranh giới ngày VN, ngày có/không đơn, legacy unknown timestamp.
-- UI: không pha chế/ship/cash-transfer; bốn navigation và kênh; thao tác giỏ/Hotline/App/lưu/thu/menu/báo cáo; lỗi giữ giỏ; rapid click; viewport PC/mobile, label/keyboard, không overflow.
-- Build: `npm test`, `npm run build`, kiểm tra source diff, review React. Không khai báo lint/typecheck pass khi chưa có tooling.
+Chi phí vận hành: ngày, khoản mục, số tiền dương, note. Tiền mua nguyên liệu chỉ ghi sổ kho, không cộng lần nữa vào chi phí vận hành.
+
+Dashboard ngày/tuần/tháng: doanh số theo thời điểm bán, đã thu theo paidAt, chưa thu của giao dịch trong kỳ, món bán/top món/giờ tốt, giá vốn tiêu hao, lợi nhuận gộp, chi phí/kết quả ước tính, kho thấp và giờ nhân viên. Giao dịch hủy loại khỏi doanh số/tiêu hao hợp lệ; tiền đã ghi nhận giữ lịch sử và hiện khoản hủy cần đối soát. Không âm thầm coi khoản đã thu là đã hoàn.
+
+## Dữ liệu cũ và an toàn
+
+Không ghi/xóa/import tự động các khóa localStorage cũ. Domain/storage legacy và test bảo toàn còn giữ để đối soát; UI cũ không được đưa vào bundle mới. DB mở rộng bằng migration, không rewrite chứng từ cũ. Không tự nhập Excel: phải kiểm tra file, chủ quán xác nhận đơn vị/công thức/giá thiếu trước. Không seed DEMO vào production.
+
+Không merge main, không deploy production, không migrate production. Cloud chỉ đạt nghiệm thu sau cấp DB thử, auth, migration thử, backup/restore drill và kiểm thử hai thiết bị trên Preview thật.

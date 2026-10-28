@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { channels, seed, parsePrice, quantity, totalItems, createOrder, legacyOrder, markPaid, report, businessDate } from '../src/domain.js';
+import { channels, seed, fmt, parsePrice, quantity, totalItems, createOrder, legacyOrder, markPaid, report, businessDate } from '../src/domain.js';
 import { createRepository } from '../src/storage.js';
 
 const now = '2026-10-24T03:00:00.000Z';
@@ -170,3 +170,5 @@ test('Vietnam midnight independent of host timezone, empty report', () => {
   assert.equal(businessDate('2026-10-23T17:00:00Z'), '2026-10-24');
   const r = report([], '2026-10-24'); assert.equal(r.sales, 0); assert.equal(r.received, 0); assert.equal(r.rows.length, 4);
 });
+
+test('aggregate money strings beyond safe integer format without rounding',()=>{assert.equal(fmt('9007199254740993'),'9.007.199.254.740.993đ');});
