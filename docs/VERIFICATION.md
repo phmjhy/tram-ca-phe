@@ -2,6 +2,56 @@
 
 Ngày cập nhật: 28/10/2026. Nhánh `feature/cafe-management`, dựa trên code PR #1 và thay yêu cầu nghiệp vụ bằng docs/REQUIREMENTS.md. Không thao tác main/production/database production.
 
+## MỚI NHẤT — 29/10/2026: Console đã mở, branch Preview riêng được xác minh
+
+Nguồn: đọc lại Vercel metadata và Neon Console thật; [preview-cloud/latest-status.json](preview-cloud/latest-status.json). Không dùng kết luận envs=[] hoặc thiếu database của vòng trước.
+
+| Kiểm tra | Trạng thái mới nhất | Bằng chứng |
+|---|---|---|
+| Neon hiện có | PASS | neon-aero-clock / mute-thunder-42120324; không tạo project/database khác |
+| Console access | PASS | Email verification đã hoàn tất; vào được organization Vercel: Tramsac/project hiện có |
+| Branch Production | PASS identity | main, br-old-haze-b8fmcrjs; Console ghi Production branch, backs Vercel Production |
+| Branch Preview | PASS identity/cách ly branch | preview/feature/cafe-management, br-bitter-butterfly-b8nl03v0; parent main, created by Vercel; Console ghi Preview deployment của tram-ca-phe/Git branch feature/cafe-management/commit27afa58 |
+| DATABASE_URL scope | PASS metadata; cần runtime đối chiếu | Shared Preview+Production ở cấp project; Neon có Preview deployment action. Không đổi shared env/Production hoặc kết luận chung DB chỉ từ metadata |
+| BETTER_AUTH_SECRET/APP_ORIGIN/APP_ENV scope | PASS metadata | Riêng Preview + feature/cafe-management; Secret values không được trả lại qua API |
+| Preview branch rỗng | BLOCKED, chưa xác minh đủ | Đã chọn đúng branch/neondb và gửi SELECT chỉ đọc; automation timeout, chưa lấy được kết quả. Không lấy public-schema-empty của main làm kết quả Preview |
+| Runtime endpoint của bản Preview mới | BLOCKED đối chiếu SQL | Cần so branch_id từ connection operator và chứng minh app dùng đúng endpoint; nhãn branch trong Console liên kết deploymentFCqzto… cùng Git branch/commit |
+| Redeploy Preview | PASS | dpl_7tY2fTVH82Nat7VXPsAHFLYHRCPf, target=null, READY; https://tram-ca-ahcfnf3ry-tramsac.vercel.app |
+| /api/v1/version | PASS |200, commit27afa58, configured=true |
+| /api/v1/me | FAIL backend readiness |503 BACKEND_UNAVAILABLE; log SCHEMA_MISMATCH, chưa có schema migration ứng dụng |
+| Operator config local | BLOCKED | .env.preview.local và hai file user chưa tồn tại; không có DB URL trong process |
+| Migration000–002, OWNER/STAFF, login/nghiệp vụ/two-session sync cloud | BLOCKED, chưa chạy | Cần direct credential Preview riêng và SQL preflight trước mọi mutation |
+
+Không còn chặn bởi kích hoạt email. Thao tác chủ quán cần hiện tại là cấp **một file .env.preview.local riêng** theo PREVIEW_SETUP.md, với DATABASE_URL direct lấy đúng branch br-bitter-butterfly-b8nl03v0 và secret/origin/APP_ENV Preview. Không gửi các giá trị qua chat; không tạo lại DB. Sau đó agent sẽ kiểm tra read-only branch_id/schema/counts trước migration và tạo mật khẩu TEST ngẫu nhiên bằng script hiện có, không hardcode.
+
+Gói migration nguyên tử được chuẩn bị ngoài repo (/private/tmp), giữ nguyên SQL000–002 và SHA256, guard branch_id chính xác + database neondb + public schema rỗng; chưa gửi mutation lên Neon. Local kiểm tra riêng đã PASS: áp dụng3 migration, từ chối chạy lại/public không rỗng và từ chối branch Production; không tính là migration cloud PASS. Browser automation lỗi/timeout không được ghi thành SQL PASS.
+
+## Lịch sử vòng 28/10/2026 — Neon đã kết nối
+
+Nguồn bằng chứng mới: [preview-cloud/latest-status.json](preview-cloud/latest-status.json). Các phần envs=[]/CONFIGURATION_REQUIRED bên dưới là **lịch sử trước khi chủ quán kết nối Neon**, không còn mô tả hiện tại.
+
+| Kiểm tra mới | Kết quả | Bằng chứng |
+|---|---|---|
+| PR #2 / nhánh | PASS | Draft, chưa merge; feature/cafe-management, head27afa58 trước tài liệu vòng này |
+| Neon resource thực | PASS | neon-aero-clock; project mute-thunder-42120324; store_fekuWjduCabPmDL7, available |
+| DATABASE_URL | PASS đã có; cách ly chưa xác nhận | env sensitivity metadata cấp chung Preview+Production, không có override DB nhánh |
+| BETTER_AUTH_SECRET, APP_ORIGIN, APP_ENV | PASS phạm vi | Chỉ Preview + feature/cafe-management; sensitive, API không trả value (decrypted=false) |
+| Giá trị secret/origin/APP_ENV | PARTIAL/BLOCKED | Runtime đi qua config validation ở probe /me; không in secret; chưa đọc được giá trị để xác nhận origin bằng alias và APP_ENV=preview |
+| Preview Branching | PASS metadata, BLOCKED branch identity | Resource có deployment action Neon cho Preview. Project env không phản ánh override webhook theo từng deployment; không được kết luận dùng chung DB chỉ từ scope |
+| Read-only SQL resource mặc định | PASS | neondb / neondb_owner / br-old-haze-b8fmcrjs; không public base tables, có9 neon_auth tables. Không đọc hàng khách |
+| DB Preview rỗng và độc lập Production | BLOCKED | Chưa đối chiếu branch/endpoint của deployment với branch Production; branch mặc định rỗng nghiệp vụ không chứng minh cách ly |
+| Redeploy đúng Preview | PASS | dpl_7tY2fTVH82Nat7VXPsAHFLYHRCPf, target=null, READY; https://tram-ca-ahcfnf3ry-tramsac.vercel.app |
+| Version probe bản Preview đúng target | PASS |200, build27afa58f458246b6078a0ee9a990d6cfab2910fc, configured=true |
+| /me trên Preview đúng target | FAIL backend readiness |503 BACKEND_UNAVAILABLE; request020c2617-9f60-4563-9945-30f941d3d8fa; runtime code SCHEMA_MISMATCH. Chưa có migration ứng dụng |
+| Neon Console qua Open in Neon SSO | BLOCKED | Trang Email Verification yêu cầu chủ quán kích hoạt email trước khi xem Console/branch |
+| Migration000–002, user OWNER/STAFF, test nghiệp vụ/two-session cloud | BLOCKED, chưa chạy | Không mutation DB cho tới khi branch Preview an toàn được xác nhận và có operator access |
+
+**Không yêu cầu tạo lại database.** Dùng resource Neon đã có. Bước chủ quán cần ngay: hoàn tất link kích hoạt email Neon trong tab Email Verification; không gửi link/secret qua chat. Sau đó mới đối chiếu branch Preview, branch Production, endpoint và kiểm tra schema/counts trước migration. Nếu vẫn cần credential operator, cấp riêng qua file .env.preview*.local/secret manager, không paste vào chat.
+
+Lỗi thao tác redeploy được ghi rõ: API không nhận target=preview; lần dùng staging gán alias phụ tram-ca-phe-tramsac.vercel.app sang staging. Đã khôi phục alias phụ về deployment production83ZuYY… và kiểm tra lại alias chính tram-ca-phe.vercel.app/main vẫn production4509d46. Bản dùng review cuối là target=null (Preview), không staging. Không có migration, tài khoản hay dữ liệu nghiệp vụ cloud được tạo; không merge main hoặc deploy production.
+
+Chỉ tài liệu/bằng chứng được cập nhật trong vòng này; local42/42 và E2E21/21 cũ không được tính là cloud PASS.
+
 ## Môi trường và phạm vi
 
 Node 24, React18/Vite6, Better Auth1.7.12, pg8.23.1; PostgreSQL **native 18.4** riêng do test fixture tạo và tự xóa. Không emulator, không sử dụng DATABASE_URL production. User/nguyên liệu/món/note đều DEMO/TEST. Chrome156 headless qua Playwright, timezone Asia/Ho_Chi_Minh, hai context độc lập (cookie/localStorage khác nhau).

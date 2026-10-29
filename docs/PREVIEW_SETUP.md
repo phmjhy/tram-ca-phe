@@ -5,25 +5,21 @@ Cập nhật 28/10/2026. Chỉ cấu hình và kiểm thử phạm vi đã có; 
 URL dùng thống nhất cho đăng nhập/test:
 https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app
 
-## 1. Kết quả kiểm tra hiện tại
+## 1. Trạng thái mới nhất 29/10/2026 — Neon đã kết nối
 
-- Nhánh local: feature/cafe-management, sạch trước khi cập nhật tài liệu.
-- Vercel team tramsac, project tram-ca-phe; Preview a06ccb8 build READY.
-- Env metadata riêng nhánh: không có biến; không decrypt giá trị.
-- Integration configurations cấp team: rỗng. Không có Neon connector trong công cụ hiện tại. Điều này không chứng minh chủ quán không có Neon ở tài khoản khác; hiện chưa có kết nối được cấp cho phiên làm việc này.
-- Máy làm việc: chưa có .env.local/.env.preview.local, DATABASE_URL/BETTER_AUTH_SECRET/APP_ORIGIN/APP_ENV/NEON_API_KEY/VERCEL_TOKEN không có trong process; chưa có Vercel CLI. Chỉ kiểm tra tồn tại, không đọc/in giá trị.
-- GET /api/v1/version:200, build a06ccb8ce8f3e054ecb5e407fc384ca10f38a057, configured=false.
-- GET /api/v1/me:503, code CONFIGURATION_REQUIRED. Đây là chặn cấu hình, không phải cloud login PASS.
+Đã xác minh lại resource neon-aero-clock, project mute-thunder-42120324, store_fekuWjduCabPmDL7. Không yêu cầu tạo database mới. DATABASE_URL hiện cấp cho cả Preview/Production. BETTER_AUTH_SECRET, APP_ORIGIN, APP_ENV hiện có riêng Preview/feature/cafe-management; sensitive values không đọc lại được qua API. Metadata tích hợp có action Neon riêng Preview; webhook có thể override DB theo deployment, nên scope chung không đủ kết luận cùng database.
 
-## 2. Chủ quán tạo database thử riêng
+Đã redeploy đúng Preview: https://tram-ca-ahcfnf3ry-tramsac.vercel.app , target=null, READY. Version200 configured=true. Probe /me của deployment đã nhận config trả503, runtime SCHEMA_MISMATCH; chưa chạy migration. Chi tiết và bằng chứng vòng mới ở [VERIFICATION.md](VERIFICATION.md) và [preview-cloud/latest-status.json](preview-cloud/latest-status.json).
 
-1. Vào [Neon Console](https://console.neon.tech), tạo **project mới** tên ví dụ tram-ca-phe-preview. Chọn vùng phù hợp với Function hiện tại iad1 (US East) để hạn chế độ trễ thử nghiệm. Không tạo bản sao/branch có dữ liệu khách từ production.
-2. Dùng database rỗng của project mới, tên mặc định neondb hoặc tên thử nghiệm rõ ràng. Branch có thể mang tên main trong project **thử nghiệm mới**; tên này không phải nhánh Git main và không làm nó thành database production. Ghi lại project/branch/database để đối chiếu trước khi chạy SQL.
-3. Trong Connect chọn đúng project/branch/database/role. Giữ TLS theo connection string Neon cung cấp. Chọn pooled connection cho Vercel runtime; lấy direct connection tới **cùng database thử nghiệm** cho migration/operator. Không sửa hostname để đoán URL direct.
-4. Không cần bật Neon Auth: ứng dụng đang dùng Better Auth với các bảng SQL hiện có. Không cần API giao hàng hoặc thêm dịch vụ mới.
-5. Không bắt buộc cài Marketplace integration nếu đã cấp DATABASE_URL thủ công. Nếu dùng integration, kiểm tra rõ chỉ Preview của dự án này; không nối Production hoặc tự tạo branch từ dữ liệu thật.
+Đã vào được Neon Console: Production main/br-old-haze-b8fmcrjs và Preview preview/feature/cafe-management/br-bitter-butterfly-b8nl03v0 là hai branch riêng. Preview do Vercel tạo, liên kết cùng Git branch/commit27afa58. Bước email verification đã hoàn tất. SQL SELECT trên Preview chưa thu được kết quả do automation timeout; chưa migrate hay provision cloud. Hiện cần operator file .env.preview.local như mục4, không tạo lại database.
 
-Tài liệu chính thức: [Neon projects](https://neon.com/docs/manage/projects), [connection pooling](https://neon.com/docs/connect/connection-pooling).
+## 2. Dùng Neon hiện có và xác nhận cách ly trước migration
+
+1. Vercel project → Storage → neon-aero-clock → Open in Neon. Neon Console hiện đã đăng nhập được. Không còn yêu cầu xác minh email; không tạo lại database.
+2. Sau đăng nhập, xem branch Production/default và branch Preview do action deployment tạo. Đối chiếu branch ID/parent/endpoint với deployment PR #2; kiểm tra branch Preview khác branch Production. Không thay Production branch/integration/environment. Không suy ra cách ly chỉ vì tên Git branch là feature/cafe-management.
+3. Read-only SQL đã thực thi trong Vercel resource mặc định: neondb/neondb_owner/branch br-old-haze-b8fmcrjs, không có public base tables, có các bảng neon_auth. Đây chưa phải chứng cứ branch Preview thực tế rỗng hoặc khác Production.
+4. Chọn đúng branch Preview và chạy read-only schema/counts. Nếu có dữ liệu thật hoặc branch mapping không rõ thì dừng; không migrate vào resource mặc định dùng cho Production. Chỉ sau xác nhận DB Preview an toàn mới nạp operator credentials và chạy script mục5.
+5. Theo [Neon managed integration](https://neon.com/docs/guides/vercel-managed-integration), Preview branching injects override riêng deployment, không hiện trong project env settings. Không xóa biến shared hoặc ngắt resource Production chỉ để thử cách ly. Nếu automatic branch không được tạo, cần cấp branch Preview riêng **trong project hiện có**, sau khi kiểm tra parent/data; không đoán connection URL.
 
 ## 3. Cấu hình Vercel, chỉ nhánh PR #2
 
@@ -123,7 +119,7 @@ Hai browser context độc lập cùng alias, owner PC1440×900 và staff mobile
 
 Dữ liệu TEST có tiền/kho cần giữ ledger, không tự DELETE bảng để cleanup; owner đối soát/hủy bằng chức năng hiện có nếu cần.
 
-## 7. Trạng thái hiện tại
+## 7. Trạng thái lịch sử trước khi kết nối Neon (đã bị thay thế bởi mục1–2)
 
 PASS: kiểm tra branch, source/env requirements, metadata không secret, API routing version200.
 

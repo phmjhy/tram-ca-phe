@@ -1,0 +1,157 @@
+{
+  "checkedAt": "2026-10-28T15:28:37.255Z",
+  "scope": "Fresh Vercel metadata + readonly SQL through Vercel Neon resource + Preview HTTP",
+  "branch": "feature/cafe-management",
+  "pr": 2,
+  "sourceCommit": "27afa58f458246b6078a0ee9a990d6cfab2910fc",
+  "neon": {
+    "name": "neon-aero-clock",
+    "projectId": "mute-thunder-42120324",
+    "storeId": "store_fekuWjduCabPmDL7",
+    "integrationConfigurationId": "icfg_jNrbvF00he7b6bmOS2k8ctN4",
+    "state": "available",
+    "connectedEnvironments": [
+      "preview",
+      "production"
+    ],
+    "previewDeploymentActionConfigured": true,
+    "actualPreviewBranchIdentityVerified": false,
+    "productionBranch": {
+      "name": "main",
+      "id": "br-old-haze-b8fmcrjs",
+      "source": "Neon Console Production branch label"
+    },
+    "previewBranch": {
+      "name": "preview/feature/cafe-management",
+      "id": "br-bitter-butterfly-b8nl03v0",
+      "parentId": "br-old-haze-b8fmcrjs",
+      "createdBy": "Vercel",
+      "linkedDeployment": "dpl_FCqzto91JnXSvWtwepGjv4CBoCw5",
+      "linkedGitCommit": "27afa58",
+      "source": "Neon Console Preview deployment label and branch URL"
+    },
+    "separateBranchesVerified": true,
+    "consoleAccess": "Email verification completed; Console accessible on 2026-10-29",
+    "previewSqlResultCollected": false,
+    "runtimeEndpointMappingVerified": false
+  },
+  "environmentMetadata": [
+    {
+      "key": "APP_ENV",
+      "target": [
+        "preview"
+      ],
+      "gitBranch": "feature/cafe-management",
+      "type": "sensitive",
+      "updatedAt": 1793199558691
+    },
+    {
+      "key": "APP_ORIGIN",
+      "target": [
+        "preview"
+      ],
+      "gitBranch": "feature/cafe-management",
+      "type": "sensitive",
+      "updatedAt": 1793199558691
+    },
+    {
+      "key": "BETTER_AUTH_SECRET",
+      "target": [
+        "preview"
+      ],
+      "gitBranch": "feature/cafe-management",
+      "type": "sensitive",
+      "updatedAt": 1793199558691
+    },
+    {
+      "key": "DATABASE_URL_UNPOOLED",
+      "target": [
+        "preview",
+        "production"
+      ],
+      "gitBranch": null,
+      "type": "sensitive",
+      "updatedAt": 1793183341430
+    },
+    {
+      "key": "DATABASE_URL",
+      "target": [
+        "preview",
+        "production"
+      ],
+      "gitBranch": null,
+      "type": "sensitive",
+      "updatedAt": 1793183341430
+    }
+  ],
+  "readonlyResourceQuery": {
+    "database": "neondb",
+    "role": "neondb_owner",
+    "branchId": "br-old-haze-b8fmcrjs",
+    "publicBaseTables": [],
+    "neonAuthTables": [
+      "account",
+      "invitation",
+      "jwks",
+      "member",
+      "organization",
+      "project_config",
+      "session",
+      "user",
+      "verification"
+    ],
+    "warning": "Resource default branch only; cannot equate with actual Preview deployment or prove full database emptiness. No customer rows read."
+  },
+  "preview": {
+    "deploymentId": "dpl_7tY2fTVH82Nat7VXPsAHFLYHRCPf",
+    "url": "https://tram-ca-ahcfnf3ry-tramsac.vercel.app",
+    "target": null,
+    "state": "READY",
+    "version": {
+      "status": 200,
+      "body": "{\"build\":\"27afa58f458246b6078a0ee9a990d6cfab2910fc\",\"apiVersion\":1,\"configured\":true}"
+    },
+    "me": {
+      "status": 503,
+      "body": "{\"error\":\"Không thể xử lý yêu cầu. Dữ liệu chưa được xác nhận; vui lòng thử lại cùng thao tác.\",\"code\":\"BACKEND_UNAVAILABLE\",\"requestId\":\"020c2617-9f60-4563-9945-30f941d3d8fa\"}"
+    },
+    "runtimeCodes": [
+      "SCHEMA_MISMATCH"
+    ]
+  },
+  "previousConfigProbe": {
+    "deploymentId": "dpl_6TpxKmc9orfML7WZhZqkNe2kU1rA",
+    "target": "staging",
+    "me": {
+      "status": 503,
+      "body": "{\"error\":\"Không thể xử lý yêu cầu. Dữ liệu chưa được xác nhận; vui lòng thử lại cùng thao tác.\",\"code\":\"BACKEND_UNAVAILABLE\",\"requestId\":\"48eb3050-35b0-473e-9466-dd96bfb72348\"}"
+    },
+    "runtimeCode": "SCHEMA_MISMATCH"
+  },
+  "blockers": [
+    "Operator .env.preview.local missing; Vercel Secret values cannot be read back by current API",
+    "Preview branch selected and readonly SELECT submitted in Neon SQL Editor, but result not collected after browser automation timeout",
+    "Preview emptiness and actual runtime endpoint mapping still require SQL verification"
+  ],
+  "cloudMutations": {
+    "migration": false,
+    "users": false,
+    "businessData": false
+  },
+  "aliasIncident": {
+    "stagingAssignedSecondaryAlias": "tram-ca-phe-tramsac.vercel.app",
+    "restoredTo": "dpl_83ZuYYy6nrxbHZM5KjXzDjt3UhE9",
+    "verified": true,
+    "primaryProductionAliasUnchanged": true
+  },
+  "result": "PASS connected Neon, separate Production/Preview branch identities, scoped auth env metadata, redeploy/version. BLOCKED Preview emptiness, migration, users and cloud E2E pending private operator config.",
+  "recheckedAt": "2026-10-29T05:17:49.172Z",
+  "localMigrationBundleChecks": {
+    "database": "isolated native PostgreSQL",
+    "result": "PASS",
+    "appliedMigrationCount": 3,
+    "rejectsReplayOrNonemptySchema": true,
+    "rejectsProductionBranchId": true,
+    "cloudMigrationExecuted": false
+  }
+}
