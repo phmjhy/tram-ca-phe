@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-31",
+  "scope": "Real Vercel Preview; Playwright Chrome; independent OWNER 1440x900 and STAFF 390x844 contexts",
+  "url": "https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app",
+  "database": {
+    "branch": "br-bitter-butterfly-b8nl03v0",
+    "name": "neondb",
+    "identityGuard": "PASS"
+  },
+  "provisioning": {
+    "existingScript": "scripts/create-user.mjs",
+    "owner": "PASS",
+    "staff": "PASS",
+    "databaseRolesVerified": true
+  },
+  "successfulLoginRunAt": "2026-10-31T04:39:48.646Z",
+  "cases": [
+    {
+      "name": "OWNER sign-in",
+      "status": "PASS",
+      "http": 200
+    },
+    {
+      "name": "OWNER session and exact navigation",
+      "status": "PASS",
+      "tabs": [
+        "Bán hàng",
+        "Dashboard",
+        "Kho & Menu",
+        "Chi phí",
+        "Nhân viên"
+      ]
+    },
+    {
+      "name": "STAFF sign-in",
+      "status": "PASS",
+      "http": 200
+    },
+    {
+      "name": "STAFF session and exact navigation",
+      "status": "PASS",
+      "tabs": [
+        "Bán hàng",
+        "Ca làm"
+      ]
+    },
+    {
+      "name": "STAFF forbidden admin APIs",
+      "status": "PASS",
+      "paths": [
+        "/api/v1/inventory",
+        "/api/v1/dashboard",
+        "/api/v1/expenses",
+        "/api/v1/reports/daily"
+      ],
+      "http": [
+        403,
+        403,
+        403,
+        403
+      ]
+    },
+    {
+      "name": "Independent authenticated session cookies",
+      "status": "PASS"
+    }
+  ],
+  "business": {
+    "testIngredientCreation": "PASS UI",
+    "testProductCreation": "PASS UI HTTP201",
+    "recipe": "BLOCKED automation selector timeout",
+    "stockConsumptionPaymentDashboardShifts": "NOT VERIFIED",
+    "lastRetry": "BLOCKED Vercel Protection before app login"
+  },
+  "limitations": [
+    "Successful login proves cloud auth/session works, not byte-for-byte equality of local and Vercel secrets.",
+    "Temporary Vercel access link used privately; Deployment Protection kept enabled.",
+    "No production changes, migrations, seed DEMO, or PR merge.",
+    "TEST ingredient/product data remains in Preview; no real customer data used."
+  ]
+}
