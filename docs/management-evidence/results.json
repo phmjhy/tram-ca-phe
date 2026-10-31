@@ -1,0 +1,137 @@
+{
+  "at": "2026-10-28T08:41:22.230Z",
+  "scope": "Isolated native PostgreSQL + HTTP + independent Chromium contexts; not Neon/Vercel cloud",
+  "cases": [
+    {
+      "name": "1440 + 390: two independent logins and exact role navigation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390 -> 1440: cafe search, keyboard, qty2, rapid Save, shared order, inventory once",
+      "status": "PASS",
+      "detail": {
+        "orderId": "eed67b83-3e77-4404-9fd4-c07166c836fa",
+        "total": "30000",
+        "consumptionGrams": 40
+      }
+    },
+    {
+      "name": "1440 -> 390: paidAt sync and no second consumption",
+      "status": "PASS",
+      "detail": {
+        "paidAt": "2026-10-28T08:41:29.961Z"
+      }
+    },
+    {
+      "name": "1440 -> 390: menu price edits automatically revalidate; past snapshot unchanged",
+      "status": "PASS",
+      "detail": {
+        "snapshot": "15000",
+        "newPrice": "16.000đ"
+      }
+    },
+    {
+      "name": "390: STAFF owner APIs return 403",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390: add, decrease, remove, item note and explicit paid creation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390: lost response after server commit + reload + retry never duplicates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390: offline locks saving; reconnect recovers",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390: shifts register, check-in/out, private own history",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390: legacy localStorage untouched, all layouts fit",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "1440 + 320: two independent logins and exact role navigation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320 -> 1440: cafe search, keyboard, qty2, rapid Save, shared order, inventory once",
+      "status": "PASS",
+      "detail": {
+        "orderId": "e5355992-7049-4630-9b1d-3f31843c4ceb",
+        "total": "32000",
+        "consumptionGrams": 40
+      }
+    },
+    {
+      "name": "1440 -> 320: paidAt sync and no second consumption",
+      "status": "PASS",
+      "detail": {
+        "paidAt": "2026-10-28T08:41:44.435Z"
+      }
+    },
+    {
+      "name": "1440 -> 320: menu price edits automatically revalidate; past snapshot unchanged",
+      "status": "PASS",
+      "detail": {
+        "snapshot": "16000",
+        "newPrice": "17.000đ"
+      }
+    },
+    {
+      "name": "320: STAFF owner APIs return 403",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320: add, decrease, remove, item note and explicit paid creation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320: lost response after server commit + reload + retry never duplicates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320: offline locks saving; reconnect recovers",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320: shifts register, check-in/out, private own history",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320: legacy localStorage untouched, all layouts fit",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "No JavaScript runtime errors or server 5xx",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "pageErrors": [],
+  "serverErrors": [],
+  "limitations": [
+    "Native iOS/Android keyboard not tested",
+    "Cloud Neon/Vercel database not configured"
+  ],
+  "database": "PostgreSQL 18.4 on x86_64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.6.3.2), 64-bit",
+  "browser": "156.0.8078.48"
+}

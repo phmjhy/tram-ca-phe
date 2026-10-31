@@ -1,0 +1,243 @@
+{
+  "date": "2026-10-24T01:56:30.186Z",
+  "base": "http://127.0.0.1:4175",
+  "browser": "155.0.8059.85",
+  "results": [
+    {
+      "name": "1440x900: empty isolated profile / POS layout",
+      "status": "PASS",
+      "detail": {
+        "inner": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "name": "1440x900: add/increase/decrease/remove/note/store unpaid",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "1440x900: takeaway order",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "1440x900: App manual and defaults unpaid",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "1440x900: Hotline requires phone AND address; no shipping",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "1440x900: confirm paid / paidAt",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "1440x900: rapid save (five DOM clicks same turn)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "1440x900: sales/paid/unpaid and receipts report / layout",
+      "status": "PASS",
+      "detail": {
+        "inner": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "name": "1440x900: two tabs create concurrently, storage event updates UI",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "1440x900: reload preserves orders/snapshots/paidAt",
+      "status": "PASS",
+      "detail": {
+        "inner": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "name": "1440x900: products view / layout",
+      "status": "PASS",
+      "detail": {
+        "inner": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "name": "390x844: empty isolated profile / POS layout",
+      "status": "PASS",
+      "detail": {
+        "inner": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "390x844: add/increase/decrease/remove/note/store unpaid",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390x844: takeaway order",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390x844: App manual and defaults unpaid",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390x844: Hotline requires phone AND address; no shipping",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390x844: confirm paid / paidAt",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390x844: rapid save (five DOM clicks same turn)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390x844: sales/paid/unpaid and receipts report / layout",
+      "status": "PASS",
+      "detail": {
+        "inner": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "390x844: two tabs create concurrently, storage event updates UI",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "390x844: reload preserves orders/snapshots/paidAt",
+      "status": "PASS",
+      "detail": {
+        "inner": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "390x844: products view / layout",
+      "status": "PASS",
+      "detail": {
+        "inner": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "390x844: reduced visual viewport (keyboard proxy only)",
+      "status": "PASS",
+      "detail": "Resize proxy passed; native virtual keyboard remains BLOCKED."
+    },
+    {
+      "name": "320x640: empty isolated profile / POS layout",
+      "status": "PASS",
+      "detail": {
+        "inner": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "name": "320x640: add/increase/decrease/remove/note/store unpaid",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320x640: takeaway order",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320x640: App manual and defaults unpaid",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320x640: Hotline requires phone AND address; no shipping",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320x640: confirm paid / paidAt",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320x640: rapid save (five DOM clicks same turn)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320x640: sales/paid/unpaid and receipts report / layout",
+      "status": "PASS",
+      "detail": {
+        "inner": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "name": "320x640: two tabs create concurrently, storage event updates UI",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "320x640: reload preserves orders/snapshots/paidAt",
+      "status": "PASS",
+      "detail": {
+        "inner": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "name": "320x640: products view / layout",
+      "status": "PASS",
+      "detail": {
+        "inner": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "name": "320x640: reduced visual viewport (keyboard proxy only)",
+      "status": "FAIL",
+      "detail": "Control covered or offscreen: {\"hit\":false,\"rect\":{\"x\":30,\"y\":295.75,\"width\":260,\"height\":44},\"height\":340}"
+    }
+  ],
+  "errors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "failures": [],
+  "limitations": [
+    "Real iOS/Android virtual keyboard is not emulated by desktop Chrome; BLOCKED."
+  ],
+  "screenshots": [
+    "1440x900-pos.png",
+    "1440x900-reports.png",
+    "1440x900-orders.png",
+    "1440x900-products.png",
+    "390x844-pos.png",
+    "390x844-reports.png",
+    "390x844-orders.png",
+    "390x844-products.png",
+    "320x640-pos.png",
+    "320x640-reports.png",
+    "320x640-orders.png",
+    "320x640-products.png"
+  ],
+  "fatal": "Control covered or offscreen: {\"hit\":false,\"rect\":{\"x\":30,\"y\":295.75,\"width\":260,\"height\":44},\"height\":340}"
+}

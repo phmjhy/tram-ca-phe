@@ -1,35 +1,38 @@
-# Trạm Cà Phê — POS MVP
+# Trạm Cà Phê
 
-Website quản lý bán hàng **một quán cà phê**, hỗ trợ 3 hình thức: tại quán (không quản lý bàn), đơn từ app (GrabFood / ShopeeFood) và đơn từ hotline.
+Một web React + Vite cho quán nhỏ, OWNER/STAFF, PostgreSQL chung qua API Vercel. Yêu cầu hiện hành: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md). Không chọn kênh bán, bàn/bếp/mã giao dịch/phương thức thu tiền trên UI.
 
-## Tính năng bản MVP
-- Bán hàng POS: chọn món, số lượng, ghi chú, nguồn đơn.
-- Hotline: tên khách, số điện thoại, địa chỉ và phí giao hàng.
-- App: ghi mã đơn, chọn app.
-- Danh sách đơn, trạng thái pha chế, xác nhận đã thu tiền, hủy đơn.
-- Quản lý menu: thêm món, đổi giá, bật/tắt món.
-- Báo cáo doanh thu theo ngày và kênh bán (chưa trừ chiết khấu app).
-- Responsive cho PC và điện thoại.
+STAFF: Bán hàng, Ca làm. OWNER: Bán hàng, Dashboard, Kho & Menu, Chi phí, Nhân viên. Không fallback sang localStorage khi backend lỗi. Khóa cũ vẫn được giữ nguyên trên thiết bị; không tự import vào DB.
 
-## Chạy trong VS Code
-1. Cài Node.js LTS và mở thư mục dự án bằng VS Code.
-2. Mở Terminal và chạy `npm install`.
-3. Chạy `npm run dev` rồi mở URL được in ra (thường là `http://localhost:5173`).
-4. Kiểm tra bản build: `npm run build`.
+## Chạy và kiểm tra
 
-## Đưa lên GitHub + Vercel
-1. Tạo repository GitHub mới (ví dụ `tram-ca-phe-pos`).
-2. Trong Terminal:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial Trạm Cà Phê POS MVP"
-   git branch -M main
-   git remote add origin https://github.com/USERNAME/tram-ca-phe-pos.git
-   git push -u origin main
-   ```
-3. Vercel → Add New Project → Import repository GitHub → Framework Preset: **Vite** → Build Command: `npm run build` → Output Directory: `dist` → Deploy.
-4. Sau này đẩy code lên nhánh `main`, Vercel tự cập nhật khi Git integration đã được thiết lập.
+Node 24, dependency theo lockfile:
 
-## QUAN TRỌNG — Chưa phải hệ thống production
-Bản này cố ý chỉ là **demo frontend**: dữ liệu nằm trong `localStorage` của **từng trình duyệt**, không đồng bộ PC/điện thoại, không có tài khoản, phân quyền, database hay backup. Không dùng cho việc bán hàng thực tế, nhất là khi nhiều nhân viên cùng thao tác. Cần thêm backend, PostgreSQL, xác thực/phân quyền và giao dịch đơn hàng trước khi đưa quán vào vận hành. Không nhập thông tin khách thật trong bản demo công khai.
+```sh
+npm ci
+npm test
+npm run build
+```
+
+Test tạo PostgreSQL native tạm qua `embedded-postgres`, không mock/emulator, không dùng DATABASE_URL có sẵn. Cần quyền initdb/postgres và cổng loopback. Cluster tự dừng/xóa sau test. Không tạo user hệ điều hành. Repo chưa có lint/typecheck riêng (JavaScript).
+
+## Backend thử nghiệm
+
+1. Chuẩn bị PostgreSQL/Neon thử nghiệm riêng. Không dùng dữ liệu khách hoặc database production.
+2. Tạo `.env.local` theo `.env.example`; điền secret trực tiếp tại nơi quản lý secret: DATABASE_URL, BETTER_AUTH_SECRET >=32 ký tự, APP_ORIGIN chính xác, APP_ENV=development/preview. Không đặt tiền tố VITE_; không đưa giá trị vào chat/log/Git.
+3. `npm run db:migrate`: checksum/advisory lock/transaction; chặn môi trường production. Không tự migrate trong build/request.
+4. Cấp user bằng `npm run user:create`, qua biến riêng POS_USER_EMAIL, POS_USER_PASSWORD >=12 ký tự, POS_USER_NAME, POS_USER_ROLE=owner|staff. Không tài khoản mặc định, không public signup. Script chặn production.
+5. Nếu cần DEMO local, database nghiệp vụ phải rỗng: APP_ENV=test hoặc development, CONFIRM_DEMO=YES, DEMO_OWNER_EMAIL là owner thử nghiệm; `npm run db:seed:demo`. Script từ chối mọi Vercel deployment và database đã có menu/kho. Công thức/giá trong seed là dữ liệu minh họa, không dùng cho quán thật.
+6. `npm run build` rồi `npm start`: UI + API tại http://127.0.0.1:4176. `npm run dev` chỉ frontend Vite.
+
+Vercel dùng Functions `api/[...path].js` và rewrite `/api/:path*` trong `vercel.json`, driver pg qua pooled URL/TLS của Neon. Preview dùng APP_ORIGIN hoặc VERCEL_URL đúng deployment, không wildcard origin. Không có credentials ở frontend. Chưa có cloud database; UI báo lỗi cấu hình thay vì sinh dữ liệu giả. Production hiện vẫn là main cũ và không bị thay đổi.
+
+## Kiểm thử browser
+
+```sh
+node e2e/management.mjs --playwright=/private/tmp/tram-pos-browser/node_modules/playwright/index.mjs
+```
+
+Cần Playwright và Chrome; đường dẫn có thể thay qua tham số và POS_CHROME_PATH. Runner tự tạo DB/user DEMO/HTTP riêng, hai browser context độc lập, PC 1440×900/mobile 390×844 và 320×640. Kết quả/screenshot tại docs/management-evidence. Không lưu cookie/password/DB URL vào artifact. Script e2e/verify.mjs và ảnh docs/evidence là lịch sử PR #1 localStorage, **không** chứng minh backend hiện tại.
+
+Xem [docs/VERIFICATION.md](docs/VERIFICATION.md) để biết PASS/FAIL/BLOCKED thực tế, [BACKEND_PLAN.md](BACKEND_PLAN.md) cho schema/API/triển khai và giới hạn còn mở. Chưa đủ điều kiện vận hành production khi thiếu Neon, cloud test, dữ liệu thật được đối soát và backup/restore.
