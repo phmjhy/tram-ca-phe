@@ -2,6 +2,31 @@
 
 Ngày cập nhật: 28/10/2026. Nhánh `feature/cafe-management`, dựa trên code PR #1 và thay yêu cầu nghiệp vụ bằng docs/REQUIREMENTS.md. Không thao tác main/production/database production.
 
+## MỚI NHẤT — 31/10/2026: sửa đơn giá nguyên liệu và tự chọn món mới PASS local + Neon Preview
+
+Code đã test: efd247399063ffed879e42ed9076779ff6bb04f0, Vercel Preview READY dpl_77M5CgQXpjjo7LwrUiFGKStuqnhz, alias https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app . Database identity được kiểm tra trong runner trước ghi: neondb / br-bitter-butterfly-b8nl03v0; chỉ dùng nguyên liệu và món TEST hiện có.
+
+Thay đổi: OWNER sửa unitCost trong PATCH ingredients bằng version hiện có; decimal không âm, tối đa 3 chữ số thập phân. UPDATE chỉ name/minimum/unit_cost/version, không thay stock/unit hay ledger. Audit lưu đơn giá mới. Thiếu unitCost vẫn tương thích client cũ (giữ giá). Không cần schema migration. Đơn mới lấy giá nguyên liệu hiện tại lúc tiêu hao; stock_movements cũ và order_items không bị cập nhật. UI hiển thị/điền sẵn giá theo đ/g, đ/ml, đ/cái. Sau tạo món, chọn id server trả về sau refresh và hiện Công thức.
+
+| Kiểm thử | Local | Neon Preview thật |
+|---|---|---|
+| npm test | PASS43/43 | Không chạy tests fixture lên cloud |
+| npm run build | PASS | Vercel READY đúng commit |
+| OWNER sửa giá qua form, điền sẵn giá, nhận12.345 | PASS | PASS HTTP200 |
+| Giá âm/không hợp lệ/quá3 số lẻ | PASS HTML và API422; thêm zero/null/empty trong integration | PASS HTML và API422 |
+| STAFF sửa giá | PASS403 | PASS403 |
+| Hai OWNER cùng version | PASS một200/một409 | PASS một200/một409 bằng hai context độc lập |
+| Tồn kho khi chỉ sửa giá | PASS không đổi | PASS không đổi |
+| Ledger và snapshot cũ | PASS so sánh tất cả dữ liệu đã chụp trước | PASS so sánh ledger cũ và toàn bộ order_items cũ |
+| Đơn TEST tiếp theo dùng giá vốn mới25.125 | PASS SQL | PASS SQL stock_movements.unit_cost=25.125 |
+| Form mobile390 và320 | PASS visible/no overflow | PASS visible/no overflow |
+| Thêm món tự chọn và hiện Công thức | PASS UI, không chọn lại thủ công | PASS UI, không chọn lại thủ công |
+| Cleanup token | Không dùng | PASS official automation bypass tạm được thu hồi |
+
+Bằng chứng: [ingredient-cost-local-2026-10-31.json](preview-cloud/ingredient-cost-local-2026-10-31.json), [ingredient-cost-cloud-2026-10-31.json](preview-cloud/ingredient-cost-cloud-2026-10-31.json). Runner: e2e/ingredient-cost.mjs (mặc định PostgreSQL local riêng; --preview mới cho phép cloud sau identity/TEST guards; playwright module path nhận bằng --playwright). Không dùng seed DEMO ở cloud. Cloud dùng lại ingredient/product TEST cũ, thêm một giao dịch TEST cho giá vốn tương lai và một món TEST mới để xác minh auto-select; không sửa dữ liệu thật hoặc xóa lịch sử.
+
+Lần npm test trong sandbox bị EPERM mở localhost, đã chạy lại ngoài sandbox và PASS43/43. E2E local ban đầu cần bổ sung chờ inventory tải trước tìm form; bản cuối local và cloud đều PASS. Không gọi các lần automation lỗi ban đầu là bug backend. Không chạy migration Production/Preview, không đổi auth/tài khoản, không merge PR #2 hoặc deploy Production. Các mục bên dưới là lịch sử.
+
 ## MỚI NHẤT — 31/10/2026: toàn bộ luồng nghiệp vụ yêu cầu PASS trên Preview thật
 
 Bằng chứng: [preview-cloud/business-verification-2026-10-31.json](preview-cloud/business-verification-2026-10-31.json). Bản đã test: commit e3961a617df074c35891f837544a31ddfdf15a6a, alias https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app . Hai Chrome contexts độc lập OWNER 1440x900 / STAFF 390x844; database identity SQL trước/sau đều neondb / br-bitter-butterfly-b8nl03v0.
