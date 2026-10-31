@@ -31,3 +31,31 @@ test('disabled session rejected and DEMO seed never overwrites business data',as
 
 test('ingredient metadata edit is owner-only/versioned and preserves units and ledger balance',async()=>{const i=(await env.pool.query('SELECT * FROM ingredients WHERE id=$1',[demo.ingredient])).rows[0];const change={name:i.name,minimum:'200',version:i.version};assert.equal((await call(`/ingredients/${i.id}`,{method:'PATCH',body:change,cookie:staff})).status,403);assert.equal((await call(`/ingredients/${i.id}`,{method:'PATCH',body:change})).status,200);assert.equal((await call(`/ingredients/${i.id}`,{method:'PATCH',body:change})).status,409);assert.equal((await env.pool.query('SELECT unit FROM ingredients WHERE id=$1',[i.id])).rows[0].unit,'g');const imbalance=await env.pool.query('SELECT i.id FROM ingredients i LEFT JOIN stock_movements m ON m.ingredient_id=i.id GROUP BY i.id HAVING i.stock<>COALESCE(sum(m.quantity),0)');assert.equal(imbalance.rowCount,0);});
 test('payment day differs from sale day, expense dates serialized without timezone shift',async()=>{const day=businessDate(),d=new Date(day+'T00:00:00Z');d.setUTCDate(d.getUTCDate()-1);const yesterday=d.toISOString().slice(0,10),id=randomUUID();const before=(await call(`/dashboard?from=${day}&to=${day}`)).data;const client=await env.pool.connect();try{await client.query('BEGIN');await client.query(`INSERT INTO orders(id,code,channel,total,created_by,created_at,legacy) VALUES($1,$2,'store',7,$3,$4::date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh','{"source":"TEST legacy date fixture"}')`,[id,id,env.accounts.owner.id,yesterday]);await client.query("INSERT INTO order_items(order_id,position,name,price,qty) VALUES($1,0,'TEST old sale',7,1)",[id]);await client.query('INSERT INTO payments(id,order_id,amount,paid_at,recorded_by) VALUES($1,$2,7,now(),$3)',[randomUUID(),id,env.accounts.owner.id]);await client.query('COMMIT');}catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}const after=(await call(`/dashboard?from=${day}&to=${day}`)).data;assert.equal(after.sales,before.sales);assert.equal(BigInt(after.received),BigInt(before.received)+7n);assert.ok((await call(`/dashboard?from=${yesterday}&to=${yesterday}`)).data.top.some(p=>p.name==='TEST old sale'));const response=await call(`/expenses?from=${day}&to=${day}`);assert.equal(response.status,200);assert.ok(response.data.every(e=>e.business_date===day));});
+
+test('ingredient cost edits: owner-only decimals, CAS concurrency, unchanged stock and historical COGS',async()=>{
+ const ingredient=(await post('/ingredients',{name:'TEST editable cost',unit:'g',opening:'100',minimum:'0',unitCost:'10'})).data.id;
+ const product=(await post('/products',{name:'TEST cost snapshot',price:5000})).data.id;
+ assert.equal((await call(`/products/${product}/recipe`,{method:'PATCH',body:{version:1,items:[{ingredientId:ingredient,quantity:'2'}]}})).status,200);
+ const sell=()=>post('/orders',{items:[{id:product,qty:1,version:2}],paid:false});
+ const first=(await sell()).data.id;
+ const before=(await env.pool.query('SELECT * FROM ingredients WHERE id=$1',[ingredient])).rows[0];
+ const oldMovement=(await env.pool.query('SELECT * FROM stock_movements WHERE order_id=$1',[first])).rows;
+ const oldItems=(await env.pool.query('SELECT * FROM order_items WHERE order_id=$1',[first])).rows;
+ const edit={name:before.name,minimum:before.minimum,unitCost:'25.125',version:before.version};
+ assert.equal((await call(`/ingredients/${ingredient}`,{method:'PATCH',body:edit,cookie:staff})).status,403);
+ for(const cost of ['-1','1.0001','NaN',null,''])assert.equal((await call(`/ingredients/${ingredient}`,{method:'PATCH',body:{...edit,unitCost:cost}})).status,422);
+ const rs=await Promise.all([call(`/ingredients/${ingredient}`,{method:'PATCH',body:edit}),call(`/ingredients/${ingredient}`,{method:'PATCH',body:edit})]);
+ assert.deepEqual(rs.map(r=>r.status).sort(),[200,409]);
+ const after=(await env.pool.query('SELECT * FROM ingredients WHERE id=$1',[ingredient])).rows[0];
+ assert.equal(after.stock,before.stock);assert.equal(after.unit,before.unit);assert.equal(after.unit_cost,'25.125');assert.equal(after.version,before.version+1);
+ assert.deepEqual((await env.pool.query('SELECT * FROM stock_movements WHERE order_id=$1',[first])).rows,oldMovement);
+ assert.deepEqual((await env.pool.query('SELECT * FROM order_items WHERE order_id=$1',[first])).rows,oldItems);
+ assert.equal(oldMovement[0].unit_cost,'10.000');
+ const second=(await sell()).data.id;
+ assert.equal((await env.pool.query("SELECT unit_cost FROM stock_movements WHERE order_id=$1 AND kind='consumption'",[second])).rows[0].unit_cost,'25.125');
+ const current=(await env.pool.query('SELECT * FROM ingredients WHERE id=$1',[ingredient])).rows[0];
+ assert.equal((await call(`/ingredients/${ingredient}`,{method:'PATCH',body:{...edit,unitCost:'0',version:current.version}})).status,200);
+ const audit=(await env.pool.query("SELECT detail FROM audit_logs WHERE action='ingredient.update' AND entity_id=$1 ORDER BY created_at",[ingredient])).rows;
+ assert.equal(audit.length,2);assert.equal(audit[0].detail.unitCost,'25.125');
+ assert.equal((await env.pool.query('SELECT stock FROM ingredients WHERE id=$1',[ingredient])).rows[0].stock,current.stock);
+});
