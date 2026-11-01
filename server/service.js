@@ -10,15 +10,19 @@ export async function transaction(pool, work) {
  catch(e) { await db.query('ROLLBACK'); throw e; } finally { db.release(); }
 }
 export function services(pool) {
- async function listProducts() { return (await pool.query('SELECT id,name,category,price::text,active,version,aliases,preparation_note FROM products ORDER BY name,id')).rows.map(p=>({...p,price:Number(p.price)})); }
- async function listOrders(actor, { limit=100, before }={}) {
-  const rows=(await pool.query(`SELECT o.*,p.paid_at,p.id AS payment_id,EXISTS(SELECT 1 FROM cancellations c WHERE c.order_id=o.id) AS reversed,
+ async function listProducts() { return (await pool.query('SELECT id,name,category,price::text,active,version,aliases,preparation_note,EXISTS(SELECT 1 FROM recipes r WHERE r.product_id=products.id) AS has_recipe FROM products ORDER BY name,id')).rows.map(p=>({...p,price:Number(p.price)})); }
+ async function listOrders(actor, { limit=100, before,cursor,from,to,id }={}) {
+  let cursorTime=null,cursorId=null;if(id)uuid(id);
+  if(cursor){try{const c=JSON.parse(Buffer.from(cursor,'base64url').toString());if(!Number.isFinite(Date.parse(c.time)))throw Error();uuid(c.id);cursorTime=c.time;cursorId=c.id;}catch{throw new HttpError(422,'Con trỏ lịch sử không hợp lệ.');}}
+  if(from||to){date(from);date(to);if(to<from)throw new HttpError(422,'Khoảng ngày không hợp lệ.');}
+
+  const rows=(await pool.query(`SELECT o.*,o.created_at::text AS cursor_time,p.paid_at,p.id AS payment_id,EXISTS(SELECT 1 FROM cancellations c WHERE c.order_id=o.id) AS reversed,
    (SELECT jsonb_agg(jsonb_build_object('id',i.product_id,'name',i.name,'price',i.price,'qty',i.qty,'note',i.note) ORDER BY i.position) FROM order_items i WHERE i.order_id=o.id) AS items
    FROM orders o LEFT JOIN payments p ON p.order_id=o.id
-   WHERE ($1::timestamptz IS NULL OR o.created_at<$1) ORDER BY o.created_at DESC,o.id DESC LIMIT $2`,[before||null,limit])).rows;
+   WHERE ($1::timestamptz IS NULL OR o.created_at<$1) AND ($3::timestamptz IS NULL OR (o.created_at,o.id)<($3::timestamptz,$4::uuid)) AND ($5::date IS NULL OR (o.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $5::date AND $6::date) AND ($7::uuid IS NULL OR o.id=$7::uuid) ORDER BY o.created_at DESC,o.id DESC LIMIT $2`,[before||null,limit,cursorTime,cursorId,from||null,to||null,id||null])).rows;
   return rows.map(o=>{
    const sensitive=actor.role==='owner'||(o.created_by===actor.id && businessDate(o.created_at)===businessDate());
-   return {id:o.id,storageId:o.id,code:o.code,channel:o.channel,total:Number(o.total),createdAt:o.created_at.toISOString(),paid:Boolean(o.payment_id),paidAt:o.paid_at?.toISOString()||null,
+   return {cursor:Buffer.from(JSON.stringify({time:o.cursor_time,id:o.id})).toString('base64url'),id:o.id,storageId:o.id,code:o.code,channel:o.channel,total:Number(o.total),createdAt:o.created_at.toISOString(),paid:Boolean(o.payment_id),paidAt:o.paid_at?.toISOString()||null,
     items:o.items||[],cancelled:o.cancelled||o.reversed,appCode:o.app_code,note:sensitive?o.note:'',customer:sensitive?o.customer:'',phone:sensitive?o.phone:'',address:sensitive?o.address:'',
     ...(actor.role==='owner'&&o.legacy?{legacy:o.legacy}:{})};
   });
@@ -51,7 +55,7 @@ export function services(pool) {
    return idempotent(actor,'create-order',key,b,async db=>{
     const products=(await db.query('SELECT * FROM products WHERE id=ANY($1::uuid[]) ORDER BY id FOR SHARE',[lines.map(i=>i.id)])).rows;
     let total=0n;
-    const items=lines.map(i=>{const p=products.find(p=>p.id===i.id);if(!p?.active)throw new HttpError(409,'Món đã ngừng bán. Cập nhật giỏ.','STALE_PRICE');if(p.version!==i.version)throw new HttpError(409,'Giá món đã đổi. Cập nhật giỏ và xác nhận lại.','STALE_PRICE');total+=BigInt(p.price)*BigInt(i.qty);return {...i,name:p.name,price:p.price};});
+    const items=lines.map(i=>{const p=products.find(p=>p.id===i.id);if(!p?.active)throw new HttpError(409,'Món đã ngừng bán. Cập nhật giỏ.','STALE_PRICE');if(p.version!==i.version)throw new HttpError(409,'Giá hoặc công thức món đã đổi. Cập nhật giỏ và xác nhận lại.','STALE_PRICE');total+=BigInt(p.price)*BigInt(i.qty);return {...i,name:p.name,price:p.price};});
     if(total>BigInt(Number.MAX_SAFE_INTEGER))throw new HttpError(422,'Tổng tiền vượt giới hạn.');
     const id=randomUUID();
     const recipes=(await db.query('SELECT * FROM recipes WHERE product_id=ANY($1::uuid[]) ORDER BY ingredient_id',[lines.map(i=>i.id)])).rows;

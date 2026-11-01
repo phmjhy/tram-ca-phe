@@ -59,3 +59,42 @@ test('ingredient cost edits: owner-only decimals, CAS concurrency, unchanged sto
  assert.equal(audit.length,2);assert.equal(audit[0].detail.unitCost,'25.125');
  assert.equal((await env.pool.query('SELECT stock FROM ingredients WHERE id=$1',[ingredient])).rows[0].stock,current.stock);
 });
+
+test('recipe availability is public boolean only; recipe changes reject stale carts transactionally',async()=>{
+ const product=(await post('/products',{name:'TEST no recipe',price:10})).data;
+ let listed=(await call('/products',{cookie:staff})).data.find(p=>p.id===product.id);
+ assert.equal(listed.has_recipe,false);assert.equal('unit_cost' in listed,false);
+ await call(`/products/${product.id}/recipe`,{method:'PATCH',body:{version:1,items:[{ingredientId:demo.ingredient,quantity:'1'}]}});
+ listed=(await call('/products',{cookie:staff})).data.find(p=>p.id===product.id);assert.equal(listed.has_recipe,true);
+ const before=(await env.pool.query('SELECT count(*)::int n FROM orders')).rows[0].n;
+ const r=await post('/orders',{items:[{id:product.id,qty:1,version:1}],paid:false},staff);assert.equal(r.status,409);assert.match(r.data.error,/công thức/);
+ assert.equal((await env.pool.query('SELECT count(*)::int n FROM orders')).rows[0].n,before);
+});
+
+test('history cursor includes microseconds and id; tied timestamps paginate without loss; Vietnam dates',async()=>{
+ const ids=[];const c=await env.pool.connect();try{await c.query('BEGIN');for(let i=0;i<5;i++){const id=randomUUID();ids.push(id);await c.query(`INSERT INTO orders(id,code,channel,total,created_by,created_at,legacy) VALUES($1::uuid,($1::uuid)::text,'store',7,$2,'2020-01-01T17:00:00.123456Z','{"source":"TEST history"}')`,[id,env.accounts.owner.id]);await c.query("INSERT INTO order_items(order_id,position,name,price,qty) VALUES($1,0,'TEST history',7,1)",[id]);}await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+ let cursor='',seen=[];for(let i=0;i<3;i++){const r=await call('/orders?from=2020-01-02&to=2020-01-02&limit=2'+(cursor?'&cursor='+encodeURIComponent(cursor):''));assert.equal(r.status,200);seen.push(...r.data.map(o=>o.id));cursor=r.data.at(-1)?.cursor;}
+ assert.equal(new Set(seen).size,5);assert.deepEqual([...seen].sort(),ids.sort());
+ assert.equal((await call('/orders?from=2020-01-01&to=2020-01-01')).data.length,0);
+ assert.equal((await call('/orders?cursor=invalid')).status,422);
+ assert.equal((await call('/orders?from=2020-01-01')).status,422);
+});
+
+test('OWNER staff account lifecycle uses Better Auth; rejects staff/escalation/owner mutations; no secrets',async()=>{
+ const email=`test-admin-${randomUUID()}@example.test`,password='TEST '+randomUUID(),next='TEST reset '+randomUUID();
+ assert.equal((await post('/staff',{email,name:'TEST new staff',password},staff)).status,403);
+ assert.equal((await post('/staff',{email,name:'TEST new staff',password,role:'owner'})).status,422);
+ const r=await post('/staff',{email,name:'TEST new staff',password});assert.equal(r.status,201);const id=r.data.id;
+ assert.equal((await post('/staff',{email:email.toUpperCase(),name:'TEST duplicate',password})).status,409);
+ const login=async pw=>env.call('/api/auth/sign-in/email',{method:'POST',body:{email,password:pw}});
+ let signed=await login(password);assert.equal(signed.status,200);let cookie=signed.response.headers.getSetCookie().map(c=>c.split(';')[0]).join('; ');
+ const users=(await call('/staff')).data;assert.equal(users.find(u=>u.id===id).role,'staff');assert.deepEqual(Object.keys(users[0]).sort(),['active','email','id','name','role']);assert.equal((await call('/staff',{cookie:staff})).status,403);
+ const patch=b=>call('/staff/'+id,{method:'PATCH',body:b});
+ assert.equal((await patch({active:false})).status,200);assert.ok([401,403].includes((await call('/products',{cookie})).status));
+ assert.equal((await patch({active:true})).status,200);signed=await login(password);assert.equal(signed.status,200);cookie=signed.response.headers.getSetCookie().map(c=>c.split(';')[0]).join('; ');
+ assert.equal((await patch({password:next})).status,200);assert.ok([401,403].includes((await call('/products',{cookie})).status));assert.equal((await login(password)).status,401);assert.equal((await login(next)).status,200);
+ assert.equal((await call('/staff/'+env.accounts.owner.id,{method:'PATCH',body:{active:false}})).status,403);
+ assert.equal((await call('/staff/'+env.accounts.owner.id,{method:'PATCH',body:{password:next}})).status,403);
+ const audit=(await env.pool.query('SELECT detail FROM audit_logs WHERE entity_id=$1',[id])).rows;assert.ok(audit.every(r=>!JSON.stringify(r).includes(password)&&!JSON.stringify(r).includes(next)));
+ assert.equal((await env.call('/api/auth/sign-up/email',{method:'POST',body:{email,password,name:'TEST'}})).status,403);
+});

@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
+import { staffAccounts } from './staff.js';
 import { services } from './service.js';
 import { HttpError, fields, requireOwner } from './validation.js';
 import { businessDate } from '../src/domain.js';
 export function createApp({pool,auth,origin,build='development'}) {
- const service=services(pool);
+ const service=services(pool),staff=staffAccounts(pool,auth);
  const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
  return async function handle(request) {
   const requestId=randomUUID();
@@ -29,6 +30,12 @@ export function createApp({pool,auth,origin,build='development'}) {
     try{body=JSON.parse(raw);}catch{throw new HttpError(422,'JSON không hợp lệ.');}
    }
    const from=url.searchParams.get('from')||businessDate(),to=url.searchParams.get('to')||from;
+   if(path==='/api/v1/staff'){
+    if(method==='GET')return json(await staff.list(actor));
+    if(method==='POST')return json(await staff.create(actor,body),201);
+   }
+   const staffMember=path.match(/^\/api\/v1\/staff\/([^/]+)$/);
+   if(staffMember&&method==='PATCH')return json(await staff.update(actor,staffMember[1],body));
    if(path==='/api/v1/inventory'&&method==='GET')return json(await service.inventory(actor));
    if(path==='/api/v1/ingredients'&&method==='POST')return json(await service.ingredient(actor,body,request.headers.get('idempotency-key')),201);
    const ingredient=path.match(/^\/api\/v1\/ingredients\/([^/]+)$/);
@@ -61,10 +68,13 @@ export function createApp({pool,auth,origin,build='development'}) {
     if(method==='GET'){
      const limit=Number(url.searchParams.get('limit')||100);const before=url.searchParams.get('before');
      if(!Number.isInteger(limit)||limit<1||limit>100||(before&&!Number.isFinite(Date.parse(before))))throw new HttpError(422,'Phân trang không hợp lệ.');
-     return json(await service.listOrders(actor,{limit,before}));
+     const cursor=url.searchParams.get('cursor'),from=url.searchParams.get('from'),to=url.searchParams.get('to');
+     return json(await service.listOrders(actor,{limit,before,cursor,from,to}));
     }
     if(method==='POST')return json(await service.createOrder(actor,body,request.headers.get('idempotency-key')),201);
    }
+   const order=path.match(/^\/api\/v1\/orders\/([^/]+)$/);
+   if(order&&method==='GET'){const rows=await service.listOrders(actor,{id:order[1],limit:1});if(!rows.length)throw new HttpError(404,'Không tìm thấy đơn.');return json(rows[0]);}
    const payment=path.match(/^\/api\/v1\/orders\/([^/]+)\/payment$/);
    if(payment&&method==='POST'){
     fields(body,[]);
@@ -75,11 +85,11 @@ export function createApp({pool,auth,origin,build='development'}) {
    if(operation&&method==='GET')return json(await service.operation(actor,operation[1]));
    throw new HttpError(404,'API không tồn tại.');
   }catch(error){
-   const status=error.status||(['23505'].includes(error.code)?409:['23514','22P02','23503','22003'].includes(error.code)?422:503);
-   const message=error.status?error.message:error.code==='23505'?'Dữ liệu bị trùng hoặc đã có ca check-in. Tải lại để kiểm tra.':'Không thể xử lý yêu cầu. Dữ liệu chưa được xác nhận; vui lòng thử lại cùng thao tác.';
+   const status=(typeof error.status==='number'?error.status:typeof error.statusCode==='number'?error.statusCode:0)||(['23505'].includes(error.code)?409:['23514','22P02','23503','22003'].includes(error.code)?422:503);
+   const message=error instanceof HttpError?error.message:error.code==='23505'?'Dữ liệu bị trùng hoặc đã có ca check-in. Tải lại để kiểm tra.':'Không thể xử lý yêu cầu. Dữ liệu chưa được xác nhận; vui lòng thử lại cùng thao tác.';
    // Log only a correlation ID and error class/code, never payloads/SQL/connection strings.
    if(status>=500)console.error(JSON.stringify({requestId,code:error.code||'BACKEND_UNAVAILABLE'}));
-   return json({error:message,code:error.status?error.code:'BACKEND_UNAVAILABLE',requestId},status);
+   return json({error:message,code:error instanceof HttpError?error.code:'BACKEND_UNAVAILABLE',requestId},status);
   }
  };
 }
