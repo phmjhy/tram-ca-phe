@@ -2,6 +2,29 @@
 
 Ngày cập nhật: 28/10/2026. Nhánh `feature/cafe-management`, dựa trên code PR #1 và thay yêu cầu nghiệp vụ bằng docs/REQUIREMENTS.md. Không thao tác main/production/database production.
 
+## MỚI NHẤT — 01/11/2026: chuẩn bị vận hành (chưa Production)
+
+**READY FOR OWNER APPROVAL** cho bước xem xét; **BLOCKED để mở bán Production**. Không merge PR#2, không deploy/migrate/ghi Production, không xóa TEST/branch/backup và không chạy lại000–002.
+
+| Kiểm tra thực tế | Kết quả | Bằng chứng / giới hạn |
+|---|---|---|
+| SQL nguồn Preview | PASS | neondb / br-bitter-butterfly-b8nl03v0 / PostgreSQL18.6, repeatable-read READ ONLY;20 bảng public,3 migrations |
+| Backup ứng dụng Preview | PASS | pg_dump18.6 custom public, exported snapshot; dump0600/thư mục0700 ngoài Git |
+| Restore thử nghiệm | PASS | PostgreSQL18.4 mới chỉ loopback, database mới;20/20 bảng count+checksum khớp,20 FK validated |
+| Tồn kho/ledger, tổng đơn/items, payments/paid_at, duplicate stock, shift timestamps | PASS | Mỗi phép đối soát0 sai lệch;5 đơn,2 payment,11 movement,3 shifts trong snapshot TEST |
+| Bảo toàn dữ liệu | PASS trong phạm vi bài backup | Nguồn chỉ đọc; đích mới, persistent=true/server đã dừng; giữ cả2 lần thử thất bại và backup; không restore đè |
+| Toàn bộ Neon/PITR | BLOCKED | Chỉ restore public ứng dụng; managed neon_auth/cluster roles ngoài phạm vi. Free plan không chứng minh PITR bật, chưa xác minh actual history window |
+| Cách ly Production hiện tại | BLOCKED trước cutover | Preview identity PASS; Production branch đã biết từ lần trước nhưng chưa SQL-verify lại hiện tại, chưa kiểm kê dữ liệu Production mới nhất |
+| Git/Vercel | PASS kiểm tra read-only | PR#2 Draft feature; Preview mới nhất READY/target=null commit72846c3; Production main4509d46/dpl_83Zu vẫn bản cũ |
+| Dữ liệu menu thật | Có nguồn, BLOCKED để import | Sheets đã đọc bounded:46 món,25 NVL,31 món cost thiếu/không số; chưa owner-approved, tồn mở đầu/minimum/alias/active chưa chốt |
+| Production auth/config | BLOCKED | Không tạo OWNER thật; secret/origin/env Production cần cấu hình riêng và xác minh biến ẩn; thiếu recovery/operator bootstrap được review |
+| Build sau tài liệu/script | PASS | npm run build; không đổi code runtime/schema/frontend |
+| Unit/integration/E2E | Không chạy lại trong lượt này | Baseline46/46 và cloud nghiệp vụ ở mục dưới; không dùng kết quả cũ để chứng nhận restore login/PITR/Production |
+
+Evidence đã lọc không chứa dữ liệu dòng/credential: [production-readiness-2026-11-01.json](preview-cloud/production-readiness-2026-11-01.json). Script thử nghiệm: scripts/verify-preview-restore.mjs. Hai lỗi công cụ restore được sửa: SSL root kế thừa sai cho localhost, rồi schema public tạo sẵn xung đột CREATE SCHEMA. Hai transaction restore lỗi không commit; lần3 thành công. Không sửa migration hoặc bỏ constraint để đạt PASS.
+
+Hướng dẫn chủ quán/cutover/khôi phục: [PRODUCTION_RUNBOOK.md](PRODUCTION_RUNBOOK.md). Dữ liệu cần duyệt: [MENU_APPROVAL.md](MENU_APPROVAL.md). Backup tạm chưa phải chính sách offsite/retention; phải giải quyết cùng PITR và recovery trước vận hành.
+
 ## MỚI NHẤT — 01/11/2026: nghiệm thu UX và quản lý STAFF
 
 Preview đã kiểm thử: commit `0b38424fbf2504405472816b385af09e18b922b6`, deployment `dpl_GWDeraWcLPMZwLB4p6HoAtCiDw3J` READY/target=null, alias https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app . Mỗi runner cloud kiểm tra direct connection và SQL identity `neondb` / `br-bitter-butterfly-b8nl03v0` trước ghi. Bằng chứng: [ux-acceptance-2026-11-01.json](preview-cloud/ux-acceptance-2026-11-01.json).
