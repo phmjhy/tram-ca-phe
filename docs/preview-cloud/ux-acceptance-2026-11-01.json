@@ -1,0 +1,291 @@
+{
+  "date": "2026-11-01",
+  "testedAppCommit": "0b38424fbf2504405472816b385af09e18b922b6",
+  "deployment": "dpl_GWDeraWcLPMZwLB4p6HoAtCiDw3J",
+  "url": "https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app",
+  "database": {
+    "db": "neondb",
+    "branch": "br-bitter-butterfly-b8nl03v0"
+  },
+  "local": {
+    "unitIntegration": {
+      "pass": 46,
+      "fail": 0
+    },
+    "build": "PASS",
+    "regressionCases": 21,
+    "ux": {
+      "scope": "Isolated native PostgreSQL + HTTP",
+      "at": "2026-11-01T07:39:38.694Z",
+      "cases": [
+        {
+          "name": "Recipe availability, alias/unaccented Enter, disabled missing recipe and stale-cart notice",
+          "status": "PASS"
+        },
+        {
+          "name": "STAFF sale sync preserves all three OWNER draft fields; explicit reload and CAS lock",
+          "status": "PASS"
+        },
+        {
+          "name": "Rapid save once; payment no second deduction; cancellation returns once; shortage rolls back",
+          "status": "PASS"
+        },
+        {
+          "name": "History pagination complete/no duplicates; date filter UI",
+          "status": "PASS",
+          "loadMoreUI": "35 local tied-time rows"
+        },
+        {
+          "name": "OWNER creates/locks/unlocks/resets STAFF; new password login; old sessions revoked; STAFF403",
+          "status": "PASS",
+          "testAccountLeftLocked": true
+        },
+        {
+          "name": "Monday–Sunday default, next-week/tomorrow visibility, Vietnam time independent of UTC browser; attendance sync",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 1440",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 320",
+          "status": "PASS"
+        },
+        {
+          "name": "Pre-existing financial history unchanged; no JS runtime errors",
+          "status": "PASS"
+        }
+      ]
+    },
+    "ingredientCost": {
+      "scope": "Isolated native PostgreSQL/local HTTP",
+      "at": "2026-11-01T09:28:56.751Z",
+      "cases": [
+        {
+          "name": "OWNER prefilled decimal cost edit; negative HTML validity; no stock/history change",
+          "status": "PASS",
+          "cost": "12.345",
+          "stock": "1000.000"
+        },
+        {
+          "name": "OWNER edit form fits mobile 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER edit form fits mobile 320",
+          "status": "PASS"
+        },
+        {
+          "name": "STAFF403; invalid costs422; two OWNER sessions CAS200/409; stock/history unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "New TEST sale snapshots updated COGS; all previous ledger/items unchanged",
+          "status": "PASS",
+          "unitCost": "25.125"
+        },
+        {
+          "name": "New product auto-selected and recipe visible without manual reselection",
+          "status": "PASS"
+        }
+      ]
+    },
+    "extra": {
+      "scope": "Isolated native PostgreSQL + HTTP",
+      "at": "2026-11-01T09:46:00.929Z",
+      "cases": [
+        {
+          "name": "TEST menu edit/deactivate/reactivate; inactive sale rollback; recipe quantity update without duplicates",
+          "status": "PASS"
+        },
+        {
+          "name": "TEST ml ingredient creation; purchase replay once; adjustment; negative stock blocked",
+          "status": "PASS",
+          "stock": "3.500"
+        },
+        {
+          "name": "Dashboard sales/debt/receipts/COGS/result and TEST expense idempotency; STAFF403",
+          "status": "PASS"
+        },
+        {
+          "name": "New TEST shift correction owner-only; reason required; hours and audit verified",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 1440",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 320",
+          "status": "PASS"
+        },
+        {
+          "name": "Pre-existing financial history unchanged; no JS runtime errors",
+          "status": "PASS"
+        }
+      ]
+    }
+  },
+  "cloud": {
+    "ux": {
+      "scope": "Real Neon/Vercel Preview",
+      "at": "2026-11-01T08:03:47.603Z",
+      "cases": [
+        {
+          "name": "Recipe availability, alias/unaccented Enter, disabled missing recipe and stale-cart notice",
+          "status": "PASS"
+        },
+        {
+          "name": "STAFF sale sync preserves all three OWNER draft fields; explicit reload and CAS lock",
+          "status": "PASS"
+        },
+        {
+          "name": "Rapid save once; payment no second deduction; cancellation returns once; shortage rolls back",
+          "status": "PASS"
+        },
+        {
+          "name": "History pagination complete/no duplicates; date filter UI",
+          "status": "PASS",
+          "loadMoreUI": "cloud API pages of 2; date-filter UI"
+        },
+        {
+          "name": "OWNER creates/locks/unlocks/resets STAFF; new password login; old sessions revoked; STAFF403",
+          "status": "PASS",
+          "testAccountLeftLocked": true
+        },
+        {
+          "name": "Monday–Sunday default, next-week/tomorrow visibility, Vietnam time independent of UTC browser; attendance sync",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 1440",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 320",
+          "status": "PASS"
+        },
+        {
+          "name": "Pre-existing financial history unchanged; no JS runtime errors",
+          "status": "PASS"
+        }
+      ],
+      "database": {
+        "db": "neondb",
+        "branch": "br-bitter-butterfly-b8nl03v0"
+      }
+    },
+    "ingredientCost": {
+      "scope": "Neon/Vercel Preview",
+      "at": "2026-11-01T09:15:04.180Z",
+      "cases": [
+        {
+          "name": "OWNER prefilled decimal cost edit; negative HTML validity; no stock/history change",
+          "status": "PASS",
+          "cost": "12.345",
+          "stock": "1020.000"
+        },
+        {
+          "name": "OWNER edit form fits mobile 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER edit form fits mobile 320",
+          "status": "PASS"
+        },
+        {
+          "name": "STAFF403; invalid costs422; two OWNER sessions CAS200/409; stock/history unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "New TEST sale snapshots updated COGS; all previous ledger/items unchanged",
+          "status": "PASS",
+          "unitCost": "25.125"
+        }
+      ],
+      "database": {
+        "db": "neondb",
+        "branch": "br-bitter-butterfly-b8nl03v0"
+      }
+    },
+    "extra": {
+      "cases": [
+        {
+          "name": "TEST menu edit/deactivate/reactivate; inactive sale rollback; recipe quantity update without duplicates",
+          "status": "PASS"
+        },
+        {
+          "name": "TEST ml ingredient creation; purchase replay once; adjustment; negative stock blocked",
+          "status": "PASS",
+          "stock": "3.500"
+        },
+        {
+          "name": "Dashboard sales/debt/receipts/COGS/result and TEST expense idempotency; STAFF403",
+          "status": "PASS"
+        },
+        {
+          "name": "New TEST shift correction owner-only; reason required; hours and audit verified",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 1440",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 320",
+          "status": "PASS"
+        },
+        {
+          "name": "Pre-existing financial history unchanged; no JS runtime errors",
+          "status": "PASS"
+        }
+      ],
+      "attempts": [
+        {
+          "at": "2026-11-01T09:32:52.574Z",
+          "stoppedInTestParser": true,
+          "reason": "BigInt cannot parse fractional COGS; not an application/API JSON failure",
+          "completedCases": 2
+        },
+        {
+          "at": "2026-11-01T09:44:47.695Z",
+          "resumeExistingExpense": true,
+          "duplicateExpenseCreated": false,
+          "result": "PASS"
+        }
+      ]
+    }
+  },
+  "security": {
+    "officialAutomationBypassRevoked": true,
+    "publicSignupRemainsDisabled": true,
+    "createdTestStaffLeftLocked": true,
+    "migrationRunOnNeon": false,
+    "originalAccountsPreserved": true,
+    "productionChanged": false,
+    "prMerged": false
+  },
+  "limits": [
+    "Cloud Xem them button with >30 rows not exercised; local tested 35 tied-time rows and cloud tested cursor pages of 2 plus date-filter UI. No artificial 30-order cloud seed.",
+    "Browser widths 1440,390,320; native mobile keyboards not verified.",
+    "Cloud supplemental menu/stock/expense/correction checks use authenticated browser API calls; UI interactions covered in main UX suite.",
+    "Existing local screenshot files are historical; current regression results are JSON/log evidence."
+  ]
+}

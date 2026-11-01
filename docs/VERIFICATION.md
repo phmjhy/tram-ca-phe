@@ -2,6 +2,43 @@
 
 Ngày cập nhật: 28/10/2026. Nhánh `feature/cafe-management`, dựa trên code PR #1 và thay yêu cầu nghiệp vụ bằng docs/REQUIREMENTS.md. Không thao tác main/production/database production.
 
+## MỚI NHẤT — 01/11/2026: nghiệm thu UX và quản lý STAFF
+
+Preview đã kiểm thử: commit `0b38424fbf2504405472816b385af09e18b922b6`, deployment `dpl_GWDeraWcLPMZwLB4p6HoAtCiDw3J` READY/target=null, alias https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app . Mỗi runner cloud kiểm tra direct connection và SQL identity `neondb` / `br-bitter-butterfly-b8nl03v0` trước ghi. Bằng chứng: [ux-acceptance-2026-11-01.json](preview-cloud/ux-acceptance-2026-11-01.json).
+
+### Đối chiếu source và thay đổi
+
+Các bất tiện được xác nhận trong source trước sửa: products thiếu cờ công thức; chỉ tải100 đơn; chưa có quản lý tài khoản; lịch mặc định kết thúc hôm nay; ingredient form key theo version làm mất draft. Pagination còn thiếu tie-breaker cho timestamp trùng. Giới hạn100 là thiết kế tải có giới hạn, được giữ nguyên ở API; UI mới tải30/trang, không tải tất cả cùng lúc.
+
+Không thêm schema/migration. API products thêm boolean `has_recipe`, không thêm giá nguyên liệu cho STAFF; transaction bán vẫn khóa/kiểm tra version, công thức và kho. Giỏ nhận thông báo khi giá/công thức đổi và yêu cầu cập nhật/xác nhận lại. Cursor mới giữ timestamp microsecond + id, vẫn nhận before cũ; lọc ngày theo Việt Nam. GET orders/:id giúp cập nhật trạng thái khi thanh toán/hủy một đơn ở trang lịch sử cũ.
+
+OWNER quản lý STAFF bằng các bảng Better Auth hiện có: bộ băm từ `auth.$context.password.hash`, tạo user/credential/user_access và audit trong transaction; đăng nhập/session/KDF vẫn Better Auth1.7.12. API list chỉ id/name/email/role/active; reset không trả password/hash/token, xóa session; lock cũng xóa session và role/active được kiểm tra mỗi request. Public signup vẫn tắt. Không cho thay đổi bất kỳ OWNER nào qua API STAFF, nên không thể khóa OWNER cuối. Giới hạn10 thao tác tài khoản/phút/OWNER trên rateLimit hiện có; role từ client không được nhận. Có hai phần Tài khoản/Ca làm trong Nhân viên.
+
+Form nguyên liệu controlled giữ draft và base version riêng, không remount theo stock version; báo đổi server, khóa save stale và cho chọn Tải lại dữ liệu. Không tắt polling. Ca làm mặc định thứHai–Chủnhật, nút Tuần trước/Tuần sau/Hôm nay; trạng thái sắp tới/đang làm/hoàn thành; datetime-local chuyển +07:00 rõ ràng, đã thử browser UTC.
+
+| Hạng mục | Đã sửa gì | Local | Cloud Preview | Vấn đề còn lại |
+|---|---|---|---|---|
+| Món/công thức | Cờ công thức, nhãn và chặn thêm giỏ, thông báo stale | PASS integration + E2E | PASS UI + API | Không có lỗi đang mở trong phạm vi đã test |
+| Lịch sử | Xem thêm30/trang, lọc ngày, cursor ổn định, trạng thái hủy và thanh toán cùng hiển thị | PASS35 đơn cùng microsecond; UI Xem thêm, không mất/trùng | PASS cursor2/trang bao phủ các đơn hiện có và lọc ngày UI | Chưa kích hoạt nút Xem thêm trên cloud với >30 đơn; không seed thêm30 đơn chỉ để test |
+| Tài khoản STAFF | List/tạo/khóa/mở/reset, session revocation, owner-only/audit | PASS lifecycle, old-password401, owner protection, public signup403 | PASS UI tạo/khóa/mở/reset, old password401, phiên cũ mất quyền, STAFF API403; TEST mới để khóa | OWNER protection kiểm thử ghi trên fixture local; không thử khóa OWNER gốc trên cloud |
+| Ca làm | Tuần đầy đủ, điều hướng, trạng thái, múi giờ Việt Nam | PASS hôm sau/UTC browser/check-in/out | PASS UI + API; sửa ca OWNER, STAFF403, lý do bắt buộc, hours/audit | Không kiểm thử bàn phím native |
+| Draft nguyên liệu | Giữ name/cost/minimum khi STAFF bán, reload rõ, CAS | PASS đồng bộ hai phiên | PASS đủ3 field giữ nguyên; save stale bị khóa, explicit reload | Không tự merge draft với server |
+| Menu/kho/giá vốn | Regression add/edit/deactivate/recipe, ml, purchase replay/adjustment/negative stock | PASS | PASS authenticated browser API; form giá OWNER/CAS/STAFF403 và COGS mới qua UI/API | Không sửa chứng từ cũ |
+| Dashboard/chi phí | Regression sales=paid+unpaid, receipts, COGS/result, expense idempotency | PASS | PASS, chi phí TEST7đ đúng1 lần, replay cùng key | Các con số là TEST Preview |
+| Responsive/regression | Desktop1440/mobile390/320, 5 màn hình OWNER, hai phiên, lỗi JS | PASS21 regression +10 UX +6 giá +8 bổ sung | PASS10 UX +5 giá +8 bổ sung qua hai lượt có kiểm soát | Browser viewport, không phải native device keyboard |
+
+### Kết quả lệnh và phân biệt lỗi
+
+- npm test: **PASS46/46**; npm run build: **PASS**. Native PostgreSQL riêng cho local, không dùng Neon làm fixture.
+- E2E cũ `e2e/management.mjs`: **21/21 PASS**; kết quả mới JSON, các ảnh local cũ được giữ và không dùng làm ảnh chứng minh UI mới.
+- `e2e/ux.mjs`, `e2e/ux-extra-cases.mjs`, `e2e/ingredient-cost.mjs`: kết quả từng case trong artifact. Cloud journal private chặn vô tình chạy lại cả luồng và tạo TEST trùng; khi cần tiếp tục phải đối chiếu bản ghi đã ghi trước.
+- Lần supplemental cloud đầu dừng do test dùng BigInt cho COGS thập phân (SyntaxError), **không phải lỗi JSON/API**. Dashboard200 và expense201 được đối chiếu, rồi sửa parser test sang số nguyên phần triệu. SQL xác nhận chi phí đã tồn tại; lần tiếp tục replay đúng resource/idempotency key, không tạo chi phí mới. Dashboard/expenses/ca sau đó PASS.
+- Trước mọi retry đã giữ các case hoàn thành và không chạy lại phần tạo món/nguyên liệu/nhập kho đã PASS. Đơn TEST mới có payment và cancellation/return đúng một lần, thiếu kho rollback; các ledger/order_items có trước snapshot so sánh nguyên vẹn.
+
+### Phạm vi dữ liệu và triển khai
+
+Dùng nguyên liệu/món TEST đã xác định; tạo riêng món thiếu công thức, STAFF TEST (kết thúc bị khóa), nguyên liệu ml TEST, chi phí TEST7đ, giao dịch TEST để bán/thanh toán/hủy và ca TEST cho phép sửa có audit. Không nhập dữ liệu thật, không xóa dữ liệu TEST cũ, không đổi tài khoản gốc. Không chạy lại migration trên Neon, không đổi000–002, không tạo lại database. Bypass automation chỉ gửi header vào origin Preview, không vào URL/source/log; token tạm đã thu hồi. Không merge PR #2, không deploy/thay Production. Các mục bên dưới là lịch sử.
+
 ## MỚI NHẤT — 31/10/2026: sửa đơn giá nguyên liệu và tự chọn món mới PASS local + Neon Preview
 
 Code đã test: efd247399063ffed879e42ed9076779ff6bb04f0, Vercel Preview READY dpl_77M5CgQXpjjo7LwrUiFGKStuqnhz, alias https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app . Database identity được kiểm tra trong runner trước ghi: neondb / br-bitter-butterfly-b8nl03v0; chỉ dùng nguyên liệu và món TEST hiện có.
