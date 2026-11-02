@@ -2,6 +2,16 @@
 
 Ngày cập nhật: 28/10/2026. Nhánh `feature/cafe-management`, dựa trên code PR #1 và thay yêu cầu nghiệp vụ bằng docs/REQUIREMENTS.md. Không thao tác main/production/database production.
 
+## MỚI NHẤT — 02/11/2026: dry-run Sheets mới (offline)
+
+Nguồn mới lấy tab công thức làm danh sách gốc; đối chiếu menu và Danh sách NVL. [Báo cáo từng món và quyết định cần duyệt](MENU_REVIEW_2026-11-02.md).
+
+- **PASS** đọc3 tab, kiểm tra trùng nguồn/định lượng/giá/đơn vị/tham chiếu; không tự ghép tên gần giống hoặc tạo công thức.
+- **NEEDS_CONFIRMATION** dữ liệu:26 công thức có tên;0 READY,25 cần xác nhận,1 Cacao dầm ngừng bán được bỏ qua.30 menu không khớp công thức không nhập.
+- **PASS7/7** `node --test tests/menu-dry-run.test.js`; dry-run thực chạy có exit2 do vấn đề dữ liệu (đúng thiết kế), không phải cloud/API FAIL.
+- Script chỉ offline, không DB client/HTTP/env secrets. Snapshot/output private ngoài Git; không import Neon, không sửa Sheets, không migration/merge/deploy.
+- Trùng database đích và import thực tế **CHƯA KIỂM THỬ**. Kết quả này không thay thế backup/PITR/Production blockers đã ghi ngày01/11.
+
 ## MỚI NHẤT — 01/11/2026: chuẩn bị vận hành (chưa Production)
 
 **READY FOR OWNER APPROVAL** cho bước xem xét; **BLOCKED để mở bán Production**. Không merge PR#2, không deploy/migrate/ghi Production, không xóa TEST/branch/backup và không chạy lại000–002.

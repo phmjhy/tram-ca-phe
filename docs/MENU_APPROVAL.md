@@ -1,5 +1,7 @@
 # Menu và nguyên liệu cần duyệt trước vận hành
 
+> 02/11/2026: nguồn mới và kết quả hiện hành ở [MENU_REVIEW_2026-11-02.md](MENU_REVIEW_2026-11-02.md). Nội dung bên dưới là đối chiếu nguồn cũ ngày01/11, không dùng làm danh sách nhập mới.
+
 Ngày đọc:01/11/2026. Chỉ đọc, không sửa Sheets, không import vào Neon.
 Nguồn được tìm thấy qua Google Drive đã kết nối: [quản lí cafe](https://docs.google.com/spreadsheets/d/1TTl_wsa8lhYHEDbhBOkegRuO7HEKHaSobUXPvp-1hNA/edit).
 
