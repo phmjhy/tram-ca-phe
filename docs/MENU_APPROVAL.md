@@ -1,5 +1,7 @@
 # Menu và nguyên liệu cần duyệt trước vận hành
 
+> 03/11/2026: kết quả mới theo quyết định chủ quán ở [MENU_READY_2026-11-03.md](MENU_READY_2026-11-03.md),16 món sẵn sàng về giá/công thức;9 tên còn chặn.
+
 > 02/11/2026: nguồn mới và kết quả hiện hành ở [MENU_REVIEW_2026-11-02.md](MENU_REVIEW_2026-11-02.md). Nội dung bên dưới là đối chiếu nguồn cũ ngày01/11, không dùng làm danh sách nhập mới.
 
 Ngày đọc:01/11/2026. Chỉ đọc, không sửa Sheets, không import vào Neon.

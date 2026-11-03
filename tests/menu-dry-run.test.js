@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { dryRun } from '../scripts/menu-dry-run.mjs';
+import { dryRun, roundUnitCost, apiPlan } from '../scripts/menu-dry-run.mjs';
 
 const fixture = () => ({ sourceId: 'TEST', readDate: '2026-11-02',
   menu: [['Tên món','Giá bán','note'],['TEST Drink',100]],
@@ -38,4 +38,36 @@ test('missing exact name and quantity/unit mismatch are blocked', () => {
   const f=fixture(); f.menu[1][0]='TEST Drink Large'; f.recipes[3][2]='Gram';
   const codes=dryRun(f).products[0].issues.map(i=>i.code);
   assert.ok(codes.includes('MENU_NAME_NOT_FOUND')); assert.ok(codes.includes('UNIT_MISMATCH'));
+});
+test('approved decimal half-up handles ties without binary floating point rounding', () => {
+  assert.equal(roundUnitCost(116.6665),116.667);
+  assert.equal(roundUnitCost(1.0055),1.006);
+  assert.equal(roundUnitCost(52.63157894736842),52.632);
+  assert.equal(roundUnitCost(9416.666666666666),9416.667);
+  assert.equal(roundUnitCost(0.0005),0.001);assert.equal(roundUnitCost(0),0);
+});
+test('approved count units and rounding keep quantity and source unchanged', () => {
+  const f=fixture();f.ingredients[1][3]=12.345;f.ingredients[1][8]=1.2345;
+  f.ingredients[1][5]='Hộp';f.ingredients[1][7]='Hộp';f.recipes[3][2]='Hộp';
+  const original=JSON.stringify(f),r=dryRun(f,{ownerApproved:true});
+  assert.equal(r.summary.ready,1);assert.equal(r.products[0].items[0].unit,'cái');
+  assert.equal(r.products[0].items[0].quantity,2);assert.equal(r.products[0].items[0].unitCost,1.235);
+  assert.equal(JSON.stringify(f),original);
+});
+test('approved zero lemon cost is allowed, physical units still cannot be inferred', () => {
+  const f=fixture();f.ingredients[1][0]='chanh';f.recipes[1][2]='chanh';f.ingredients[1][3]=0;f.ingredients[1][8]=0;
+  assert.equal(dryRun(f,{ownerApproved:true}).summary.ready,1);
+  f.recipes[3][2]='Gram';assert.equal(dryRun(f,{ownerApproved:true}).summary.ready,0);
+});
+test('S2 approved 65000 / 50 = 1300 each, 2 per portion, price 5000', () => {
+  const f=fixture();f.menu[1]=['xúc xích s2',5000];f.recipes[1][0]='xúc xích s2';f.recipes[1][2]='xúc xích s2';
+  f.ingredients[1]=['xúc xích s2',null,'Hộp',65000,50,'Cái',50,'Cái',1300];f.recipes[3][2]='Cái';
+  const p=dryRun(f,{ownerApproved:true}).products[0];assert.equal(p.status,'READY');assert.equal(p.price,5000);
+  assert.equal(p.items[0].quantity*p.items[0].unitCost,2600);
+});
+test('API plan excludes unmatched/stopped and leaves real stock fields unresolved', () => {
+  const f=fixture();f.recipes.push(['TEST Missing','Nguyên liệu (*)','TEST Ingredient'],[null,'Lượng dùng (*)',1],[null,'Đơn vị','Ml']);
+  const plan=apiPlan(dryRun(f,{ownerApproved:true}));assert.equal(plan.products.length,1);assert.equal(plan.blocked.length,1);
+  assert.deepEqual(plan.ingredients[0].requiredBeforeCreate,['opening','minimum']);
+  assert.equal('opening' in plan.ingredients[0].createFields,false);
 });

@@ -2,6 +2,16 @@
 
 Ngày cập nhật: 28/10/2026. Nhánh `feature/cafe-management`, dựa trên code PR #1 và thay yêu cầu nghiệp vụ bằng docs/REQUIREMENTS.md. Không thao tác main/production/database production.
 
+## MỚI NHẤT — 03/11/2026: dữ liệu theo quyết định chủ quán + PostgreSQL local
+
+[Báo cáo hiện hành và danh sách món](MENU_READY_2026-11-03.md), thay kết luận0 READY ngày02/11.
+
+- Dry-run mới: **16 READY,9 tên cần xác nhận,1 ngừng bán**;16 NVL liên quan. Áp dụng half-up3 số lẻ, Chai/Hộp→cái, chanh0đ, mứt dâu g, S2 đúng2×1300=2600đ/phần và bán5000đ. Không tự map tên.
+- **PASS12/12** test validator; **PASS** build.
+- **PASS local API+PostgreSQL** cho16/16 món: nhập kho idempotent, STAFF403, tạo công thức version, bán retry không trùng/trừ lại, COGS chính xác, payment/paidAt không trừ lại, lịch sử giá vốn bất biến, thiếu kho rollback, dashboard/ledger đối soát.
+- Evidence: [menu-local-2026-11-03.json](preview-cloud/menu-local-2026-11-03.json). Hai phiên auth local độc lập, không phải browser/cloud E2E. Tồn fixture tổng hợp phục vụ test, không là tồn thực. Giữ DB local persistent; artifact kinh doanh private ngoài Git.
+- **Chưa nhập Neon/chưa merge/chưa thay Production**. Trước nhập thật còn điền opening/minimum theo kiểm kê và kiểm tra trùng/version database đích. Không thay schema/API/frontend.
+
 ## MỚI NHẤT — 02/11/2026: dry-run Sheets mới (offline)
 
 Nguồn mới lấy tab công thức làm danh sách gốc; đối chiếu menu và Danh sách NVL. [Báo cáo từng món và quyết định cần duyệt](MENU_REVIEW_2026-11-02.md).

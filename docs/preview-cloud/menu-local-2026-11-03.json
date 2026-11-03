@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-03",
+  "scope": "LOCAL_ONLY",
+  "cloud": "NOT_RUN",
+  "cases": [
+    {
+      "name": "independent OWNER/STAFF local logins",
+      "status": "PASS"
+    },
+    {
+      "name": "create normalized ingredients, purchase replay once, STAFF forbidden",
+      "status": "PASS"
+    },
+    {
+      "name": "create only READY products and recipes using actual API versions",
+      "status": "PASS"
+    },
+    {
+      "name": "all READY recipes: sale replay, exact stock, decimal COGS, payment",
+      "status": "PASS"
+    },
+    {
+      "name": "historical COGS preserved after ingredient price change; future COGS updated",
+      "status": "PASS"
+    },
+    {
+      "name": "insufficient stock rolls back; dashboard and ledger reconcile",
+      "status": "PASS"
+    }
+  ],
+  "products": [
+    {
+      "name": "Cà phê đen",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Cà phê sữa",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Bạc xỉu",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Sữa chua đá",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "xúc xích s2",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Matcha dâu",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Americano",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Nước cam",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Sữa chua dâu",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Cacao latte",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "mocha cacao",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Cà phê sữa tươi",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "247 coffee",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Redbull",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "Coca",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    },
+    {
+      "name": "vải - mirinda",
+      "sale": "PASS",
+      "stockOnce": "PASS",
+      "cogs": "PASS",
+      "paymentNoStockChange": "PASS"
+    }
+  ],
+  "status": "PASS",
+  "sourceSha256": "a2a291a2f992fbd1af43ffac5526d993022e6647a3b0c0cdaa5bf13bf6b67564",
+  "summary": {
+    "namedRecipes": 26,
+    "ready": 16,
+    "needsConfirmation": 9,
+    "stopped": 1,
+    "skippedMenu": 29
+  },
+  "validatorTests": {
+    "passed": 12,
+    "failed": 0
+  },
+  "build": "PASS",
+  "limitations": [
+    "LOCAL API handler with actual PostgreSQL, not browser/cloud E2E",
+    "Synthetic local stock counts only; real opening/minimum missing",
+    "Cloud duplicates and import not checked; no cloud writes",
+    "No browser responsiveness or staff UI tests in this run"
+  ]
+}
