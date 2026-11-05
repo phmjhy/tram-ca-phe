@@ -6,7 +6,7 @@ import {freePort} from '../tests/helpers/postgres.js';
 import {serve} from '../server/http.js';
 const modulePath=process.argv.find(a=>a.startsWith('--playwright='))?.slice(13);
 const {chromium}=await import(modulePath||'playwright');
-const output=new URL('../docs/management-evidence/',import.meta.url);await fs.mkdir(output,{recursive:true});
+const output=new URL(process.env.MANAGEMENT_EVIDENCE_DIR||'../docs/management-evidence/',import.meta.url);await fs.mkdir(output,{recursive:true});
 const evidence={at:new Date().toISOString(),scope:'Isolated native PostgreSQL + HTTP + independent Chromium contexts; not Neon/Vercel cloud',cases:[],pageErrors:[],serverErrors:[],limitations:['Native iOS/Android keyboard not tested','Cloud tests are outside this local fixture runner']};
 let env,server,browser;
 async function check(name,fn){try{const detail=await fn();evidence.cases.push({name,status:'PASS',detail:detail||''});console.log('PASS',name);}catch(e){evidence.cases.push({name,status:'FAIL',detail:e.message});throw e;}finally{await fs.writeFile(new URL('results.json',output),JSON.stringify(evidence,null,2)+'\n');}}

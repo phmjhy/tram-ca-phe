@@ -14,6 +14,13 @@ const post=(path,body,cookie=owner,key=randomUUID())=>call(path,{method:'POST',b
 const product=async()=> (await call('/products')).data.find(p=>p.id===demo.product);
 const body=async(qty=2)=>({items:[{id:demo.product,qty,version:(await product()).version,note:'TEST ít đường'}],paid:false});
 const stock=async()=>Number((await env.pool.query('SELECT stock FROM ingredients WHERE id=$1',[demo.ingredient])).rows[0].stock);
+test('product creation retry is idempotent across concurrent requests and rejects changed payload',async()=>{
+ const key=randomUUID(),body={name:'TEST product replay',price:123};
+ const results=await Promise.all(Array.from({length:5},()=>post('/products',body,owner,key)));
+ assert.ok(results.every(r=>r.status===201));assert.equal(new Set(results.map(r=>r.data.id)).size,1);
+ assert.equal((await env.pool.query('SELECT count(*)::int n FROM products WHERE name=$1',[body.name])).rows[0].n,1);
+ assert.equal((await post('/products',{...body,price:124},owner,key)).status,409);
+});
 test('real PostgreSQL: three additive migrations once, production migration blocked',async()=>{assert.equal((await env.pool.query('SELECT count(*)::int n FROM schema_migrations')).rows[0].n,3);assert.match((await env.pool.query('SELECT version()')).rows[0].version,/PostgreSQL/);await assert.rejects(migrate(env.pool,{target:'production'}),/Production/);assert.throws(()=>configuration({}),/Backend/);});
 test('auth rejects anonymous, public signup, wrong password and cross-origin mutation',async()=>{assert.equal((await env.call('/api/v1/products')).status,401);assert.equal((await env.call('/api/auth/sign-up/email',{method:'POST',body:{}})).status,403);assert.notEqual((await env.call('/api/auth/sign-in/email',{method:'POST',body:{email:env.accounts.staff.email,password:'incorrect-test-password'}})).status,200);assert.equal((await call('/orders',{method:'POST',body:await body(),key:randomUUID(),headers:{Origin:'https://bad.example'}})).status,403);});
 test('STAFF forbidden all owner read/write APIs, including legacy daily report',async()=>{for(const path of ['/inventory','/dashboard','/expenses','/reports/daily'])assert.equal((await call(path,{cookie:staff})).status,403,path);for(const path of ['/products','/ingredients','/stock','/expenses'])assert.equal((await post(path,{},staff)).status,403,path);assert.equal((await call(`/products/${demo.product}`,{method:'PATCH',body:{price:1,version:1},cookie:staff})).status,403);assert.equal((await call(`/products/${demo.product}/recipe`,{method:'PATCH',body:{},cookie:staff})).status,403);});

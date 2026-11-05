@@ -71,3 +71,9 @@ test('API plan excludes unmatched/stopped and leaves real stock fields unresolve
   assert.deepEqual(plan.ingredients[0].requiredBeforeCreate,['opening','minimum']);
   assert.equal('opening' in plan.ingredients[0].createFields,false);
 });
+test('stable import keys survive inserted sheet rows and missing stock remains unresolved',()=>{
+ const first=fixture(),second=fixture();second.ingredients.splice(1,0,[]);second.recipes.splice(1,0,[]);
+ const a=apiPlan(dryRun(first,{ownerApproved:true})),b=apiPlan(dryRun(second,{ownerApproved:true}));
+ assert.equal(a.ingredients[0].key,b.ingredients[0].key);assert.equal(a.products[0].key,b.products[0].key);
+ assert.notEqual(a.ingredients[0].sourceRow,b.ingredients[0].sourceRow);assert.equal('minimum' in a.ingredients[0].createFields,false);
+});

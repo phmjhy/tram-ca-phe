@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 
+const stableKey=(kind,name)=>kind+':'+createHash('sha256').update(String(name).normalize('NFC').trim().toLocaleLowerCase('vi')).digest('hex').slice(0,24);
 export const normalize = value => String(value ?? '').normalize('NFC').trim().toLocaleLowerCase('vi');
 const unit = (value, approved = false) => ({ gram: 'g', g: 'g', ml: 'ml', 'cái': 'cái', ...(approved ? { chai: 'cái', 'hộp': 'cái' } : {}) })[normalize(value)] ?? null;
 const present = value => value !== null && value !== undefined && value !== '';
@@ -90,9 +91,9 @@ export function apiPlan(result) {
   if (!result.ownerApprovedPolicy || result.duplicateSources.length || result.structuralErrors.length) throw new Error('Approved policy and unambiguous source required');
   const ingredients = new Map();
   const products = result.products.filter(p => p.status === 'READY').map(p => ({
-    sourceRow: p.recipeRow, create: { name: p.name.trim(), price: p.price },
+    key: stableKey('product',p.name), sourceRow: p.recipeRow, create: { name: p.name.trim(), price: p.price },
     recipe: p.items.map(item => {
-      const key = `nvl-row-${item.ingredientRow}`;
+      const key = stableKey('ingredient',item.canonicalName ?? item.ingredient);
       const createFields = { name: item.canonicalName ?? item.ingredient, unit: item.unit, unitCost: String(item.unitCost) };
       const old = ingredients.get(key);
       if (old && JSON.stringify(old.createFields) !== JSON.stringify(createFields)) throw new Error('Conflicting ingredient fields');

@@ -60,7 +60,7 @@ export function createApp({pool,auth,origin,build='development'}) {
    if(path==='/api/v1/dashboard'&&method==='GET')return json(await service.dashboard(actor,from,to));
    if(path==='/api/v1/products'){
     if(method==='GET')return json(await service.listProducts());
-    if(method==='POST')return json(await service.addProduct(actor,body),201);
+    if(method==='POST')return json(await service.addProduct(actor,body,request.headers.get('idempotency-key')),201);
    }
    const product=path.match(/^\/api\/v1\/products\/([^/]+)$/);
    if(product&&method==='PATCH')return json(await service.updateProduct(actor,product[1],body));

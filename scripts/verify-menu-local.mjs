@@ -11,6 +11,7 @@ import { migrate } from '../server/migrate.js';
 import { createAuth } from '../server/auth.js';
 import { createApp } from '../server/app.js';
 import { businessDate } from '../src/domain.js';
+import {inspectLocalPlan,applyLocalPlan} from './menu-local-import.mjs';
 
 process.umask(0o077);
 const scaled = (value, digits=3) => {
@@ -19,11 +20,11 @@ const scaled = (value, digits=3) => {
   return BigInt(whole + fraction.slice(0,digits).padEnd(digits,'0'));
 };
 let instance, pool, directory;
-const report = { date: '2026-11-03', scope: 'LOCAL_ONLY', cloud: 'NOT_RUN', cases: [], products: [] };
+const report = { date: null, scope: 'LOCAL_ONLY', cloud: 'NOT_RUN', cases: [], products: [] };
 const check = (name, fn) => Promise.resolve().then(fn).then(() => report.cases.push({ name, status: 'PASS' }));
 try {
   if (process.argv.length !== 3) throw new Error('Supply private source JSON only');
-  const source = JSON.parse(await readFile(process.argv[2],'utf8'));
+  const source = JSON.parse(await readFile(process.argv[2],'utf8'));report.date=source.readDate;
   const result = dryRun(source,{ownerApproved:true}), plan=apiPlan(result);
   assert.ok(plan.products.length>0);
   directory=await mkdtemp('/private/tmp/tram-menu-local-'); await chmod(directory,0o700);
@@ -58,6 +59,7 @@ try {
   });
   const api=(route,options={})=>call('/api/v1'+route,{cookie:cookies.owner,...options});
   const ids=new Map(), productIds=new Map(), needed=new Map();
+  await check('target preflight before writing menu',async()=>assert.equal((await inspectLocalPlan(pool,plan)).conflicts.length,0));
   for(const product of plan.products) for(const line of product.recipe) needed.set(line.ingredientKey,(needed.get(line.ingredientKey)||0)+Number(line.quantity));
   await check('create normalized ingredients, purchase replay once, STAFF forbidden',async()=>{
     for(const ingredient of plan.ingredients) {
@@ -81,14 +83,21 @@ try {
     }
     assert.equal((await pool.query('SELECT count(*)::int n FROM products')).rows[0].n,plan.products.length);
   });
+  await check('re-import twice skips existing identical names/recipes; no duplicate data or stock reset',async()=>{
+    const actor={id:(await pool.query('SELECT id FROM "user" WHERE email=$1',[credentials.owner.email])).rows[0].id,role:'owner'};
+    const before=(await pool.query("SELECT 'p' kind,count(*)::int n FROM products UNION ALL SELECT 'i',count(*)::int FROM ingredients UNION ALL SELECT 'm',count(*)::int FROM stock_movements UNION ALL SELECT 'r',count(*)::int FROM recipes ORDER BY 1")).rows;
+    for(let i=0;i<2;i++)await applyLocalPlan(pool,plan,actor,{});
+    assert.deepEqual((await pool.query("SELECT 'p' kind,count(*)::int n FROM products UNION ALL SELECT 'i',count(*)::int FROM ingredients UNION ALL SELECT 'm',count(*)::int FROM stock_movements UNION ALL SELECT 'r',count(*)::int FROM recipes ORDER BY 1")).rows,before);
+  });
   const stock=async()=> (await pool.query('SELECT id,stock::text FROM ingredients ORDER BY id')).rows;
-  let sausageId;
+  let sausageId,firstOrder;
   for(const product of plan.products) {
     const id=productIds.get(product.create.name), before=await stock();
     const key=randomUUID(), body={items:[{id,qty:1,version:2}],paid:false};
     const responses=await Promise.all(Array.from({length:3},()=>api('/orders',{method:'POST',cookie:cookies.staff,body,key,status:201})));
     assert.equal(new Set(responses.map(r=>r.data.id)).size,1);
     const orderId=responses[0].data.id, after=await stock();
+    firstOrder ||= orderId;
     const quantities=new Map(product.recipe.map(line=>[ids.get(line.ingredientKey),scaled(line.quantity)]));
     for(const old of before) assert.equal(scaled(old.stock)-scaled(after.find(row=>row.id===old.id).stock),quantities.get(old.id)||0n);
     const cost=(await pool.query("SELECT sum(-quantity*unit_cost)::text cost FROM stock_movements WHERE order_id=$1 AND kind='consumption'",[orderId])).rows[0].cost;
@@ -102,6 +111,12 @@ try {
     if(product.create.name.toLocaleLowerCase('vi')==='xúc xích s2') {sausageId=id; assert.equal(expected,2600n*1000000n);assert.equal(product.create.price,5000);}
   }
   report.cases.push({name:'all READY recipes: sale replay, exact stock, decimal COGS, payment',status:'PASS'});
+  await check('paid cancellation restores original consumption once across two keys',async()=>{
+    const before=await stock(),used=(await pool.query("SELECT ingredient_id,quantity::text FROM stock_movements WHERE order_id=$1 AND kind='consumption'",[firstOrder])).rows;
+    await Promise.all([1,2].map(()=>api(`/orders/${firstOrder}/cancel`,{method:'POST',body:{reason:'LOCAL TEST reconciliation'}})));
+    const after=await stock();for(const old of before){const consumed=used.find(row=>row.ingredient_id===old.id);assert.equal(scaled(after.find(row=>row.id===old.id).stock)-scaled(old.stock),consumed?-scaled(consumed.quantity):0n);}
+    assert.equal((await pool.query("SELECT count(*)::int n FROM stock_movements WHERE order_id=$1 AND kind='return'",[firstOrder])).rows[0].n,used.length);
+  });
   await check('historical COGS preserved after ingredient price change; future COGS updated',async()=>{
     assert.ok(sausageId);const ingredientId=ids.get(plan.products.find(p=>p.create.name.toLowerCase()==='xúc xích s2').recipe[0].ingredientKey);
     const old=(await pool.query('SELECT name,minimum,version FROM ingredients WHERE id=$1',[ingredientId])).rows[0];
@@ -119,8 +134,8 @@ try {
     assert.equal((await pool.query('SELECT count(*)::int n FROM ingredients i WHERE stock<>(SELECT sum(quantity) FROM stock_movements s WHERE s.ingredient_id=i.id)')).rows[0].n,0);
     const dashboard=(await api(`/dashboard?from=${businessDate()}&to=${businessDate()}`)).data;
     assert.equal(BigInt(dashboard.sales),BigInt(dashboard.paid)+BigInt(dashboard.unpaid));
-    const sum=(await pool.query("SELECT sum(-quantity*unit_cost)::text cost FROM stock_movements WHERE kind='consumption'")).rows[0].cost;
-    assert.equal(scaled(dashboard.cogs,6),scaled(sum,6));assert.equal(dashboard.count,plan.products.length+1);
+    const sum=(await pool.query("SELECT sum(-s.quantity*s.unit_cost)::text cost FROM stock_movements s WHERE kind='consumption' AND NOT EXISTS(SELECT 1 FROM cancellations c WHERE c.order_id=s.order_id)")).rows[0].cost;
+    assert.equal(scaled(dashboard.cogs,6),scaled(sum,6));assert.equal(dashboard.count,plan.products.length);
   });
   report.status='PASS';report.sourceSha256=result.sourceSha256;report.summary=result.summary;
 } catch(error) {report.status='FAIL';report.errorCode=error.code||'ASSERTION_OR_SETUP_FAILED';process.exitCode=1;}

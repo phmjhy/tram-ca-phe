@@ -39,8 +39,8 @@ export function services(pool) {
  }
  return {
   listProducts,listOrders,...management(pool,{transaction,idempotent}),
-  async addProduct(actor,b) { requireOwner(actor);fields(b,['name','category','price','active','aliases','preparationNote']);const p={id:randomUUID(),name:text(b.name,120,true),category:text(b.category||'Menu',80,true),price:price(b.price),active:b.active===undefined?true:b.active};if(typeof p.active!=='boolean')throw new HttpError(422,'Trạng thái món không hợp lệ.');
-   return transaction(pool,async db=>{await db.query('INSERT INTO products(id,name,category,price,active,aliases,preparation_note) VALUES($1,$2,$3,$4,$5,$6,$7)',[p.id,p.name,p.category,p.price,p.active,text(b.aliases,500),text(b.preparationNote,1000)]);await audit(db,actor,'product.create',p.id);return p;});
+  async addProduct(actor,b,key) { requireOwner(actor);fields(b,['name','category','price','active','aliases','preparationNote']);const p={id:randomUUID(),name:text(b.name,120,true),category:text(b.category||'Menu',80,true),price:price(b.price),active:b.active===undefined?true:b.active};if(typeof p.active!=='boolean')throw new HttpError(422,'Trạng thái món không hợp lệ.');
+   return idempotent(actor,'product.create',key,b,async db=>{await db.query('INSERT INTO products(id,name,category,price,active,aliases,preparation_note) VALUES($1,$2,$3,$4,$5,$6,$7)',[p.id,p.name,p.category,p.price,p.active,text(b.aliases,500),text(b.preparationNote,1000)]);await audit(db,actor,'product.create',p.id);return p;});
   },
   async updateProduct(actor,id,b) { requireOwner(actor);uuid(id);fields(b,['name','category','price','active','version','aliases','preparationNote']);if(!Number.isInteger(b.version)||b.version<1)throw new HttpError(422,'Thiếu version món.');
    return transaction(pool,async db=>{const old=(await db.query('SELECT * FROM products WHERE id=$1 FOR UPDATE',[id])).rows[0];if(!old)throw new HttpError(404,'Không tìm thấy món.');if(old.version!==b.version)throw new HttpError(409,'Menu đã đổi. Tải lại trước khi sửa.','STALE_PRICE');
