@@ -1,0 +1,34 @@
+{
+  "scope": "Isolated native PostgreSQL/local HTTP",
+  "at": "2026-10-31T13:11:32.204Z",
+  "cases": [
+    {
+      "name": "OWNER prefilled decimal cost edit; negative HTML validity; no stock/history change",
+      "status": "PASS",
+      "cost": "12.345",
+      "stock": "1000.000"
+    },
+    {
+      "name": "OWNER edit form fits mobile 390",
+      "status": "PASS"
+    },
+    {
+      "name": "OWNER edit form fits mobile 320",
+      "status": "PASS"
+    },
+    {
+      "name": "STAFF403; invalid costs422; two OWNER sessions CAS200/409; stock/history unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "New TEST sale snapshots updated COGS; all previous ledger/items unchanged",
+      "status": "PASS",
+      "unitCost": "25.125"
+    },
+    {
+      "name": "New product auto-selected and recipe visible without manual reselection",
+      "status": "PASS"
+    }
+  ],
+  "testScript": "e2e/ingredient-cost.mjs"
+}

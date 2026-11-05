@@ -1,0 +1,164 @@
+{
+  "date": "2026-10-31T10:28:31.777Z",
+  "scope": "Real Vercel Preview browser; two independent contexts",
+  "cases": [
+    {
+      "name": "owner sign-in HTTP",
+      "status": "PASS",
+      "http": 200
+    },
+    {
+      "name": "owner session and navigation",
+      "status": "PASS",
+      "tabs": [
+        "Bán hàng",
+        "Dashboard",
+        "Kho & Menu",
+        "Chi phí",
+        "Nhân viên"
+      ]
+    },
+    {
+      "name": "staff sign-in HTTP",
+      "status": "PASS",
+      "http": 200
+    },
+    {
+      "name": "staff session and navigation",
+      "status": "PASS",
+      "tabs": [
+        "Bán hàng",
+        "Ca làm"
+      ]
+    },
+    {
+      "name": "staff admin APIs denied",
+      "status": "PASS",
+      "statuses": [
+        403,
+        403,
+        403,
+        403
+      ]
+    },
+    {
+      "name": "independent authenticated sessions",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP PATCH /api/v1/products/59b8bc99-edf2-4313-a86e-39dd421b9bc5/recipe",
+      "status": "PASS",
+      "http": 200
+    },
+    {
+      "name": "OWNER saves recipe via UI using existing TEST product and ingredient",
+      "status": "PASS"
+    },
+    {
+      "name": "HTTP POST /api/v1/stock",
+      "status": "PASS",
+      "http": 201
+    },
+    {
+      "name": "OWNER TEST purchase via UI",
+      "status": "PASS",
+      "stock": 1100
+    },
+    {
+      "name": "HTTP POST /api/v1/orders",
+      "status": "PASS",
+      "http": 201
+    },
+    {
+      "name": "STAFF sale appears on OWNER; rapid save one order; stock consumed once",
+      "status": "PASS",
+      "total": 30000,
+      "stock": 1060
+    },
+    {
+      "name": "HTTP POST /api/v1/orders/18a4f293-b4cc-45b3-9021-75c988211999/payment",
+      "status": "PASS",
+      "http": 200
+    },
+    {
+      "name": "OWNER payment synchronizes to STAFF; paidAt; no second stock deduction",
+      "status": "PASS",
+      "stock": 1060
+    },
+    {
+      "name": "OWNER dashboard sales/received/unpaid",
+      "status": "PASS",
+      "sales": 30000,
+      "received": 30000,
+      "unpaid": 0
+    },
+    {
+      "name": "HTTP POST /api/v1/shifts",
+      "status": "PASS",
+      "http": 201
+    },
+    {
+      "name": "HTTP POST /api/v1/shifts/7bbb40fc-b83b-4b80-9663-9985044b0af2/attendance",
+      "status": "PASS",
+      "http": 200
+    },
+    {
+      "name": "HTTP POST /api/v1/shifts/7bbb40fc-b83b-4b80-9663-9985044b0af2/attendance",
+      "status": "PASS",
+      "http": 200
+    },
+    {
+      "name": "STAFF registers/checks in/out; OWNER sees shift and dashboard statistics",
+      "status": "PASS"
+    },
+    {
+      "name": "STAFF session survives reload",
+      "status": "PASS"
+    }
+  ],
+  "url": "https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app",
+  "testedCommit": "e3961a617df074c35891f837544a31ddfdf15a6a",
+  "database": {
+    "branch": "br-bitter-butterfly-b8nl03v0",
+    "name": "neondb",
+    "identityVerifiedBeforeAndAfter": true
+  },
+  "automation": {
+    "method": "Official Automation Bypass, origin-scoped header",
+    "temporaryBypassRevoked": true,
+    "tokensInArtifact": false
+  },
+  "timeoutDiagnosis": {
+    "previous": "Automation locator timed out selecting ingredient before PATCH; database had zero recipe rows",
+    "correction": "Recipe heading parent section; select/input scoped by element type instead of exact label selector",
+    "observed": "Corrected automation saved same existing TEST product recipe with HTTP200; SQL exactly one recipe row",
+    "applicationCodeChanged": false
+  },
+  "ledger": {
+    "recipeRows": 1,
+    "gramsPerDrink": 20,
+    "openingGrams": 1000,
+    "purchaseRows": 1,
+    "purchaseGrams": 100,
+    "consumptionRows": 1,
+    "consumedGrams": 40,
+    "remainingGrams": 1060,
+    "ledgerBalanceGrams": 1060,
+    "orderRows": 1,
+    "quantity": 2,
+    "snapshotUnitPrice": 15000,
+    "orderTotal": 30000,
+    "paymentRows": 1,
+    "paymentTotal": 30000,
+    "paidAtPresent": true,
+    "shiftRows": 1,
+    "attendanceValid": true,
+    "migrationRows": 3
+  },
+  "limits": [
+    "One end-to-end TEST sale, payment, purchase and shift; not a load test.",
+    "Desktop 1440x900 and mobile 390x844; native mobile keyboard not tested in this run.",
+    "Existing second TEST product remains unchanged; no cleanup or re-seed performed.",
+    "Successful HTTP/API reads and UI synchronization verified; byte-for-byte auth secret equality not inspected."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "scope": "Neon/Vercel Preview",
+  "at": "2026-10-31T13:13:19.025Z",
+  "cases": [
+    {
+      "name": "OWNER prefilled decimal cost edit; negative HTML validity; no stock/history change",
+      "status": "PASS",
+      "cost": "12.345",
+      "stock": "1040.000"
+    },
+    {
+      "name": "OWNER edit form fits mobile 390",
+      "status": "PASS"
+    },
+    {
+      "name": "OWNER edit form fits mobile 320",
+      "status": "PASS"
+    },
+    {
+      "name": "STAFF403; invalid costs422; two OWNER sessions CAS200/409; stock/history unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "New TEST sale snapshots updated COGS; all previous ledger/items unchanged",
+      "status": "PASS",
+      "unitCost": "25.125"
+    },
+    {
+      "name": "New product auto-selected and recipe visible without manual reselection",
+      "status": "PASS"
+    }
+  ],
+  "database": {
+    "db": "neondb",
+    "branch": "br-bitter-butterfly-b8nl03v0"
+  },
+  "testScript": "e2e/ingredient-cost.mjs",
+  "commit": "efd247399063ffed879e42ed9076779ff6bb04f0",
+  "deployment": "dpl_77M5CgQXpjjo7LwrUiFGKStuqnhz",
+  "url": "https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app",
+  "automationBypassRevoked": true,
+  "migrationsRun": false
+}

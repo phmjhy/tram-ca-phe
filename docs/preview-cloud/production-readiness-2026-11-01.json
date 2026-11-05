@@ -1,0 +1,170 @@
+{
+  "checkedAt": "2026-11-01T13:14:16.054Z",
+  "sourceBranch": "br-bitter-butterfly-b8nl03v0",
+  "sourceDatabase": "neondb",
+  "scope": "public",
+  "excluded": [
+    "neon_auth",
+    "cluster roles"
+  ],
+  "backup": "PASS",
+  "restore": "PASS",
+  "identity": "PASS",
+  "backupSha256": "733226e682f436fb13077fba03560f46e0421aed58e55ccf190f527ac44576c4",
+  "tables": [
+    {
+      "name": "account",
+      "rows": 3,
+      "match": true
+    },
+    {
+      "name": "audit_logs",
+      "rows": 48,
+      "match": true
+    },
+    {
+      "name": "cancellations",
+      "rows": 1,
+      "match": true
+    },
+    {
+      "name": "expenses",
+      "rows": 1,
+      "match": true
+    },
+    {
+      "name": "idempotency",
+      "rows": 24,
+      "match": true
+    },
+    {
+      "name": "ingredients",
+      "rows": 3,
+      "match": true
+    },
+    {
+      "name": "legacy_archives",
+      "rows": 0,
+      "match": true
+    },
+    {
+      "name": "order_items",
+      "rows": 5,
+      "match": true
+    },
+    {
+      "name": "orders",
+      "rows": 5,
+      "match": true
+    },
+    {
+      "name": "payments",
+      "rows": 2,
+      "match": true
+    },
+    {
+      "name": "products",
+      "rows": 5,
+      "match": true
+    },
+    {
+      "name": "rateLimit",
+      "rows": 1,
+      "match": true
+    },
+    {
+      "name": "recipes",
+      "rows": 3,
+      "match": true
+    },
+    {
+      "name": "schema_migrations",
+      "rows": 3,
+      "match": true
+    },
+    {
+      "name": "session",
+      "rows": 27,
+      "match": true
+    },
+    {
+      "name": "shifts",
+      "rows": 3,
+      "match": true
+    },
+    {
+      "name": "stock_movements",
+      "rows": 11,
+      "match": true
+    },
+    {
+      "name": "user",
+      "rows": 3,
+      "match": true
+    },
+    {
+      "name": "user_access",
+      "rows": 3,
+      "match": true
+    },
+    {
+      "name": "verification",
+      "rows": 0,
+      "match": true
+    }
+  ],
+  "foreignKeys": {
+    "total": 20,
+    "invalid": 0
+  },
+  "invariants": {
+    "stock_mismatches": 0,
+    "order_mismatches": 0,
+    "payment_mismatches": 0,
+    "duplicate_stock": 0,
+    "invalid_shifts": 0
+  },
+  "target": {
+    "type": "isolated local PostgreSQL18.4",
+    "host": "loopback only",
+    "newDatabase": true,
+    "serverStopped": true,
+    "retained": true
+  },
+  "limitations": [
+    "public application schema only; neon_auth and cluster roles excluded",
+    "Not a Neon PITR test",
+    "No post-restore browser login test",
+    "Private temporary backup is not durable offsite backup"
+  ],
+  "attempts": [
+    {
+      "restore": "FAIL",
+      "cause": "Source SSL root setting inherited by local target; fixed per-connection configuration; no source write"
+    },
+    {
+      "restore": "FAIL",
+      "cause": "public schema already existed in newly created database; single transaction rolled back; fixed by skipping only redundant schema creation TOC entry"
+    },
+    {
+      "restore": "PASS",
+      "cause": "All application objects/data restored and verified"
+    }
+  ],
+  "pitr": "BLOCKED: actual retention setting not exposed by integration metadata and not verified in Console",
+  "productionIsolation": "BLOCKED: Preview SQL identity verified; Production identity/data must be freshly verified before cutover",
+  "git": {
+    "branch": "feature/cafe-management",
+    "pr": 2,
+    "draft": true,
+    "remoteHeadBeforeDocs": "72846c3d036cf666ae21112b414e36d346f8c12c",
+    "productionMain": "4509d460c24985ba4d6e351188e739655c34f2a5"
+  },
+  "deployments": {
+    "preview": "dpl_4dX66WPrLrG8RveyZtUgnb3T2x8r",
+    "previewState": "READY",
+    "previewTarget": null,
+    "production": "dpl_83ZuYYy6nrxbHZM5KjXzDjt3UhE9",
+    "productionUnchanged": true
+  }
+}
