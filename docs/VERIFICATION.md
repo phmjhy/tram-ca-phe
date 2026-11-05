@@ -2,6 +2,19 @@
 
 Ngày cập nhật: 28/10/2026. Nhánh `feature/cafe-management`, dựa trên code PR #1 và thay yêu cầu nghiệp vụ bằng docs/REQUIREMENTS.md. Không thao tác main/production/database production.
 
+## MỚI NHẤT — 04–05/11/2026: nghiệm thu kỹ thuật, Production còn BLOCKED
+
+[Báo cáo đầy đủ/P1/go-live/blockers](RELEASE_STATUS_2026-11-05.md) · [Hướng dẫn chủ quán](OWNER_GUIDE.md) · [Evidence](release-evidence/verification-2026-11-05.json).
+
+- **PASS72/72 npm test**, build PASS. Thêm CI PR/push chỉ test/build, không secrets/không deploy. CI af34ad8 PASS; commit bàn giao tiếp tục CI và smoke xác minh SHA cuối.
+- Sửa P1: idempotency tạo món; journal mutation qua reload và nút retry theo user; giữ thành công khi chỉ refresh lỗi; timeout bao phủ body; idle PG error/reconnect; provisioning atomic và recovery OWNER có thu hồi session/audit. Không mở signup/Production guard.
+- **Local browser50/50 PASS** (management21+UX10+extra8+stability5+giá6), viewport320/390/1440, hai context. **Menu thật local16/16**,10 nhómAPI/PostgreSQL/browser PASS, gồm preflight/reimport2 lần/hủy/hoàn/kho/COGS/dashboard.
+- **Cloud29/29 PASS** (UX10+extra8+stability6+giá5) trên commitaf34ad8, SQLidentity neondb/br-bitter-butterfly-b8nl03v0. Cloud chỉ TEST; thử response lost sau commit cho món/kho/chi phí, reload/retry đúng1 lần và chỉ làm hết hạn session STAFF của bài test.
+- **Backup mã hóa+restore PASS**: AES-GCM/tamper reject, restore giải mã vào DB mới;20 bảng count/checksum,20 FK hợp lệ,0 sai lệch. Public app/auth only; key/offsite/PITR còn BLOCKED.
+- Sheets04/11 đọc lại05/11 không đổi:16 món hợp lệ,9 tên để ngoài nhập,1 ngừng bán. Mã ổn định theo tên chuẩn, không theo dòng. Theo yêu cầu mới nhất **không tự điền opening/minimum0**; gói mới cần kiểm kê.
+- Production preflight đã chạy và trả **BLOCKED/ENOENT**, không kết nối khi chưa có private readonly config. Production identity/data/PITR,secret/OWNER thật,backup dài hạn và export thiết bị cũ chưa hoàn tất. Không dùng kết quả cũ hoặc branch metadata thay SQL thực.
+- Không merge/main/deploy/migrate/import Production. Native keyboard, load/quota và đồng bộ dòng lịch sử đã tải sâu ngoài30 chưa được chứng nhận; giới hạn P2 nêu rõ trong báo cáo.
+
 ## MỚI NHẤT — 03/11/2026: dữ liệu theo quyết định chủ quán + PostgreSQL local
 
 [Báo cáo hiện hành và danh sách món](MENU_READY_2026-11-03.md), thay kết luận0 READY ngày02/11.

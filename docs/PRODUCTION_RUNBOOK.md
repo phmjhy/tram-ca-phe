@@ -1,5 +1,7 @@
 # Chuẩn bị vận hành — 01/11/2026
 
+> Cập nhật04–05/11/2026: xem [RELEASE_STATUS_2026-11-05.md](RELEASE_STATUS_2026-11-05.md) và [OWNER_GUIDE.md](OWNER_GUIDE.md) trước khi dùng thông tin lịch sử dưới đây. Backup mã hóa/restore đã test lại; SQL Production/PITR/key custody/kiểm kê/OWNER thật vẫn BLOCKED. Chưa xin phê duyệt go-live.
+
 Trạng thái: **READY FOR OWNER APPROVAL**, chưa đủ điều kiện mở bán Production.
 Chỉ thử nghiệm backup Preview; không merge, không deploy/migrate/ghi Production.
 

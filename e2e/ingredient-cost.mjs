@@ -17,6 +17,7 @@ function pass(name,detail={}){const c={name,status:'PASS',...detail};result.case
 try{
  let origin,accounts,ingredientId,productId;
  if(preview){
+  const journal=process.env.INGREDIENT_JOURNAL_FILE;if(!journal||fs.existsSync(journal))throw Object.assign(Error(),{code:'REVIEW_PREVIOUS_PREVIEW_RUN'});fs.writeFileSync(journal,JSON.stringify({started:new Date().toISOString()}),{flag:'wx',mode:0o600});
   const config=parseEnv(fs.readFileSync('.env.preview.local','utf8')),u=new URL(config.DATABASE_URL);
   origin='https://tram-ca-phe-git-feature-cafe-management-tramsac.vercel.app';
   assert.equal(config.APP_ENV,'preview');assert.equal(config.APP_ORIGIN,origin);assert.equal(u.pathname,'/neondb');assert.ok(u.hostname.endsWith('.neon.tech')&&!u.hostname.includes('-pooler'));
@@ -54,7 +55,7 @@ try{
  for(const unitCost of ['-1','1.0001','NaN'])assert.equal((await api(pc,`/api/v1/ingredients/${ingredientId}`,'PATCH',{...body,unitCost})).status,422);
  const statuses=await Promise.all([api(pc,`/api/v1/ingredients/${ingredientId}`,'PATCH',body),api(other,`/api/v1/ingredients/${ingredientId}`,'PATCH',body)]);assert.deepEqual(statuses.map(r=>r.status).sort(),[200,409]);assert.deepEqual(await snapshot(),history);assert.equal((await pool.query('SELECT stock FROM ingredients WHERE id=$1',[ingredientId])).rows[0].stock,initial.stock);
  pass('STAFF403; invalid costs422; two OWNER sessions CAS200/409; stock/history unchanged');
- stage='future_COGS';const products=(await api(staff,'/api/v1/products')).body,product=products.find(p=>p.id===productId);const sale=await api(staff,'/api/v1/orders','POST',{items:[{id:productId,qty:1,version:product.version,note:'TEST ingredient price future COGS'}],paid:false});assert.equal(sale.status,201);
+ stage='future_COGS';const products=(await api(staff,'/api/v1/products')).body,product=products.find(p=>p.id===productId);const sale=await api(staff,'/api/v1/orders','POST',{items:[{id:productId,qty:1,version:product.version,note:'TEST ingredient price future COGS'}],paid:false});assert.equal(sale.status,201);if(preview){const j=JSON.parse(fs.readFileSync(process.env.INGREDIENT_JOURNAL_FILE,'utf8'));j.orderId=sale.body.id;fs.writeFileSync(process.env.INGREDIENT_JOURNAL_FILE,JSON.stringify(j),{mode:0o600});}
  const consumption=(await pool.query("SELECT unit_cost::text FROM stock_movements WHERE order_id=$1 AND kind='consumption'",[sale.body.id])).rows;assert.equal(consumption.length,1);assert.equal(consumption[0].unit_cost,'25.125');
  const oldIds=history.map(m=>m.id);assert.deepEqual((await snapshot()).filter(m=>oldIds.includes(m.id)),history);assert.deepEqual((await pool.query('SELECT * FROM order_items WHERE order_id<>$1 ORDER BY order_id,position',[sale.body.id])).rows,oldItems);
  pass('New TEST sale snapshots updated COGS; all previous ledger/items unchanged',{unitCost:'25.125'});

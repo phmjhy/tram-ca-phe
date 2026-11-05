@@ -5,7 +5,7 @@ import EmbeddedPostgres from 'embedded-postgres';
 import net from 'node:net';
 import path from 'node:path';
 import { mkdtemp, chmod, writeFile, readFile } from 'node:fs/promises';
-import { randomBytes, createHash } from 'node:crypto';
+import { randomBytes, createHash, createCipheriv, createDecipheriv } from 'node:crypto';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -50,7 +50,7 @@ try {
   if (tables.length !== 20 || (await source.query('SELECT count(*)::int n FROM schema_migrations')).rows[0].n !== 3) throw new Error('Unexpected source schema');
   const before = await fingerprint(source, tables);
   const snapshot = (await source.query('SELECT pg_export_snapshot() snapshot')).rows[0].snapshot;
-  const dump = path.join(directory, 'preview-public.dump');
+  let dump = path.join(directory, 'preview-public.dump');
   const sourceEnv = { ...process.env, PGHOST: url.hostname, PGPORT: url.port || '5432', PGUSER: decodeURIComponent(url.username), PGPASSWORD: decodeURIComponent(url.password), PGDATABASE: 'neondb', PGSSLMODE: 'verify-full', PGSSLROOTCERT: 'system', PGCONNECT_TIMEOUT: '20', PGOPTIONS: '-c default_transaction_read_only=on' };
   // Existing DATABASE_URL is not passed as an argument or logged.
   stage = 'backup';
@@ -59,6 +59,22 @@ try {
   report.backup = 'PASS';
   report.backupSha256 = createHash('sha256').update(await readFile(dump)).digest('hex');
   await source.query('ROLLBACK');
+  // Keep every artifact. Long-term encrypted storage/key custody is a separate
+  // owner decision; neither plaintext nor keys may enter Git or CI artifacts.
+  stage='encryption';
+  const backupKey=randomBytes(32),nonce=randomBytes(12),aad=Buffer.from(JSON.stringify({branch,database:'neondb',scope:'public',sha256:report.backupSha256}));
+  const cipher=createCipheriv('aes-256-gcm',backupKey,nonce);cipher.setAAD(aad);
+  const encrypted=Buffer.concat([cipher.update(await readFile(dump)),cipher.final()]);
+  const envelope={version:1,cipher:'aes-256-gcm',nonce:nonce.toString('base64'),aad:aad.toString('base64'),tag:cipher.getAuthTag().toString('base64'),data:encrypted.toString('base64')};
+  const encryptedPath=path.join(directory,'preview-public.encrypted.json'),keyPath=path.join(directory,'backup-key-private.bin');
+  await writeFile(encryptedPath,JSON.stringify(envelope),{mode:0o600});await writeFile(keyPath,backupKey,{mode:0o600});
+  const saved=JSON.parse(await readFile(encryptedPath,'utf8')),savedKey=await readFile(keyPath);
+  const decode=(data)=>{const d=createDecipheriv('aes-256-gcm',savedKey,Buffer.from(saved.nonce,'base64'));d.setAAD(Buffer.from(saved.aad,'base64'));d.setAuthTag(Buffer.from(saved.tag,'base64'));return Buffer.concat([d.update(data),d.final()]);};
+  const plain=decode(Buffer.from(saved.data,'base64'));
+  if(createHash('sha256').update(plain).digest('hex')!==report.backupSha256)throw Error('Decryption checksum mismatch');
+  const damaged=Buffer.from(saved.data,'base64');damaged[0]^=1;let rejected=false;try{decode(damaged);}catch{rejected=true;}if(!rejected)throw Error('Tampering accepted');
+  dump=path.join(directory,'decrypted-restore-input.dump');await writeFile(dump,plain,{mode:0o600});
+  report.encryption='PASS';report.tamperDetection='PASS';report.restoreInput='decrypted authenticated AES-256-GCM backup';report.keyCustody='LOCAL_ONLY: independent long-term storage and owner key custody pending';
   stage = 'isolated-target';
   const socket = net.createServer();
   await new Promise((resolve, reject) => { socket.once('error', reject); socket.listen(0, '127.0.0.1', resolve); });

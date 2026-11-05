@@ -16,15 +16,20 @@ const index = rows => {
 };
 
 // Decimal half-up on the source decimal string, avoiding binary tie rounding.
-export function roundUnitCost(value) {
-  if (!Number.isFinite(value) || value < 0) return value;
+function fraction(value) {
   const [mantissa, exponent = '0'] = String(value).toLowerCase().split('e');
   const [whole, fraction = ''] = mantissa.split('.');
-  const digits = BigInt(whole + fraction), shift = 3 + Number(exponent) - fraction.length;
+  const digits = BigInt(whole + fraction), shift = Number(exponent) - fraction.length;
   const scale = 10n ** BigInt(Math.abs(shift));
-  const rounded = shift >= 0 ? digits * scale : (digits * 2n + scale) / (scale * 2n);
+  return shift>=0?{n:digits*scale,d:1n}:{n:digits,d:scale};
+}
+export function roundUnitRatio(price,units) {
+  if(!Number.isFinite(price)||price<0||!Number.isFinite(units)||units<=0)throw Error('Invalid price basis');
+  const a=fraction(price),b=fraction(units),n=a.n*b.d*1000n,d=a.d*b.n;
+  const rounded=(n*2n+d)/(d*2n);
   return Number(rounded) / 1000;
 }
+export function roundUnitCost(value) {return Number.isFinite(value)&&value>=0?roundUnitRatio(value,1):value;}
 
 export function dryRun(input, { ownerApproved = false } = {}) {
   if (!Array.isArray(input.menu) || !Array.isArray(input.ingredients) || !Array.isArray(input.recipes) ||
@@ -65,8 +70,9 @@ export function dryRun(input, { ownerApproved = false } = {}) {
       if (candidates.length !== 1) { add(candidates.length ? 'DUPLICATE_INGREDIENT_NAME' : 'INGREDIENT_NOT_FOUND', { ingredient: item.ingredient }); continue; }
       const n = candidates[0].cells, ingredientUnit = unit(n[7], ownerApproved);
       item.canonicalName = String(n[0]).trim();
+      item.purchaseBasis={price:n[3],packageQuantity:n[4],packageUnit:n[5],usableQuantity:n[6],sourceUnit:n[7],normalizedUnit:ingredientUnit};
       item.sourceUnitCost = n[8] ?? null;
-      item.unitCost = ownerApproved && number(n[8]) && n[8] >= 0 ? roundUnitCost(n[8]) : (n[8] ?? null);
+      item.unitCost = ownerApproved && number(n[3]) && n[3]>=0 && number(n[6]) && n[6]>0 ? roundUnitRatio(n[3],n[6]) : (n[8] ?? null);
       if (!ingredientUnit) add('UNSUPPORTED_INGREDIENT_UNIT', { ingredient: item.ingredient, unit: n[7] ?? null });
       else if (item.unit && item.unit !== ingredientUnit) add('UNIT_MISMATCH', { ingredient: item.ingredient });
       if (!number(n[8]) || n[8] < 0 || n[8] > 1e9) add('INVALID_UNIT_COST', { ingredient: item.ingredient });
@@ -97,7 +103,7 @@ export function apiPlan(result) {
       const createFields = { name: item.canonicalName ?? item.ingredient, unit: item.unit, unitCost: String(item.unitCost) };
       const old = ingredients.get(key);
       if (old && JSON.stringify(old.createFields) !== JSON.stringify(createFields)) throw new Error('Conflicting ingredient fields');
-      ingredients.set(key, { key, sourceRow: item.ingredientRow, createFields, requiredBeforeCreate: ['opening', 'minimum'] });
+      ingredients.set(key, { key, sourceRow: item.ingredientRow, createFields, purchaseBasis:item.purchaseBasis, requiredBeforeCreate: ['opening', 'minimum'] });
       return { ingredientKey: key, quantity: String(item.quantity) };
     })
   }));

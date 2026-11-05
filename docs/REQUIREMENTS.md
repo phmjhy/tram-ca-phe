@@ -40,3 +40,7 @@ Dashboard ngày/tuần/tháng: doanh số theo thời điểm bán, đã thu the
 Không ghi/xóa/import tự động các khóa localStorage cũ. Domain/storage legacy và test bảo toàn còn giữ để đối soát; UI cũ không được đưa vào bundle mới. DB mở rộng bằng migration, không rewrite chứng từ cũ. Không tự nhập Excel: phải kiểm tra file, chủ quán xác nhận đơn vị/công thức/giá thiếu trước. Không seed DEMO vào production.
 
 Không merge main, không deploy production, không migrate production. Cloud chỉ đạt nghiệm thu sau cấp DB thử, auth, migration thử, backup/restore drill và kiểm thử hai thiết bị trên Preview thật.
+
+## Bổ sung vận hành04–05/11/2026
+
+Tạo món cũng dùng idempotency transaction. Thao tác POST món/NVL/kho/chi phí/ca chưa rõ kết quả giữ journal user-scoped trong sessionStorage, hồi phục sau reload và thử lại đúngbody/key; không lưu password. Xác nhận ghi và đồng bộ sau ghi là hai trạng thái riêng. Tồn đầu/tồn tối thiểu thiếu số thực phải liệt kê kiểm kê, không tự mặc định0. Mã dữ liệu nhập ổn định theo tên chuẩn, source row chỉ để truy vết. Không nhập các công thức chưa khớp menu; không để chúng chặn cohort hợp lệ.

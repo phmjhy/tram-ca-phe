@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { dryRun, roundUnitCost, apiPlan } from '../scripts/menu-dry-run.mjs';
+import { dryRun, roundUnitCost, roundUnitRatio, apiPlan } from '../scripts/menu-dry-run.mjs';
 
 const fixture = () => ({ sourceId: 'TEST', readDate: '2026-11-02',
   menu: [['Tên món','Giá bán','note'],['TEST Drink',100]],
@@ -64,6 +64,7 @@ test('S2 approved 65000 / 50 = 1300 each, 2 per portion, price 5000', () => {
   f.ingredients[1]=['xúc xích s2',null,'Hộp',65000,50,'Cái',50,'Cái',1300];f.recipes[3][2]='Cái';
   const p=dryRun(f,{ownerApproved:true}).products[0];assert.equal(p.status,'READY');assert.equal(p.price,5000);
   assert.equal(p.items[0].quantity*p.items[0].unitCost,2600);
+  assert.equal(p.items[0].purchaseBasis.packageQuantity,50);assert.equal(p.items[0].purchaseBasis.usableQuantity,50);
 });
 test('API plan excludes unmatched/stopped and leaves real stock fields unresolved', () => {
   const f=fixture();f.recipes.push(['TEST Missing','Nguyên liệu (*)','TEST Ingredient'],[null,'Lượng dùng (*)',1],[null,'Đơn vị','Ml']);
@@ -76,4 +77,9 @@ test('stable import keys survive inserted sheet rows and missing stock remains u
  const a=apiPlan(dryRun(first,{ownerApproved:true})),b=apiPlan(dryRun(second,{ownerApproved:true}));
  assert.equal(a.ingredients[0].key,b.ingredients[0].key);assert.equal(a.products[0].key,b.products[0].key);
  assert.notEqual(a.ingredients[0].sourceRow,b.ingredients[0].sourceRow);assert.equal('minimum' in a.ingredients[0].createFields,false);
+});
+test('exact decimal price/usable quantity ratio wins over spreadsheet binary noise at tie',()=>{
+ assert.equal(roundUnitRatio(2.011,2),1.006);assert.equal(roundUnitRatio(65000,50),1300);
+ const f=fixture();f.ingredients[1][3]=2.011;f.ingredients[1][4]=2;f.ingredients[1][6]=2;f.ingredients[1][8]=1.0054999999999998;
+ const p=dryRun(f,{ownerApproved:true}).products[0];assert.equal(p.status,'READY');assert.equal(p.items[0].unitCost,1.006);
 });

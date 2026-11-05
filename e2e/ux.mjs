@@ -19,7 +19,7 @@ try{
  const run=randomUUID().slice(0,8);
  if(process.argv.includes('--extra')){
   let target=productId;
-  if(preview){const j=JSON.parse(fs.readFileSync('/private/tmp/tram-ux-preview-journal.json','utf8'));target=j.actions.find(a=>a.path==='/products'&&a.method==='POST').id;const safe=await pool.query("SELECT id FROM products WHERE id=$1 AND name LIKE 'TEST UX %' AND NOT EXISTS(SELECT 1 FROM order_items WHERE product_id=products.id)",[target]);assert.equal(safe.rowCount,1);}
+  if(preview){const j=JSON.parse(fs.readFileSync(process.env.UX_BASE_JOURNAL_FILE||'/private/tmp/tram-ux-preview-journal.json','utf8'));target=j.actions.find(a=>a.path==='/products'&&a.method==='POST').id;const safe=await pool.query("SELECT id FROM products WHERE id=$1 AND name LIKE 'TEST UX %' AND NOT EXISTS(SELECT 1 FROM order_items WHERE product_id=products.id)",[target]);assert.equal(safe.rowCount,1);}
   stage='extra_cases';await extraCases({pc,mobile,api,pool,productId:target,ingId,run,pass,resume:process.argv.includes('--resume-extra')});
  }else{
 stage='recipe_flag';const name='TEST UX Cà phê '+run;await nav(pc,'Kho & Menu');await pc.getByLabel('Tên món',{exact:true}).fill(name);await pc.getByLabel('Alias / từ khóa',{exact:true}).fill('testcoffee'+run);await pc.getByLabel('Giá bán (đ)',{exact:true}).fill('1000');const created=await action(pc,'/products','POST',()=>pc.getByRole('button',{name:'Lưu món',exact:true}).click());await pc.waitForFunction(id=>document.querySelector('select[aria-label="Chọn món để sửa"]')?.value===id,created.id);

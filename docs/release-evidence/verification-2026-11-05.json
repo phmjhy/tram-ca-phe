@@ -1,0 +1,760 @@
+{
+  "recordedAt": "2026-11-05T10:16:07.152602+00:00",
+  "testedApplicationCommit": "af34ad8d1164d417ec34c377a1481bb3748dd330",
+  "ciTestedApplicationRun": "https://github.com/phmjhy/tram-ca-phe/actions/runs/41943317304",
+  "unitBeforeOperatorAdditions": 64,
+  "unitCurrentLocal": 72,
+  "build": "PASS",
+  "runs": {
+    "local-management": {
+      "caseCount": 21,
+      "cases": [
+        {
+          "name": "1440 + 390: two independent logins and exact role navigation",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "390 -> 1440: cafe search, keyboard, qty2, rapid Save, shared order, inventory once",
+          "status": "PASS",
+          "detail": {
+            "orderId": "10a22886-4acd-40b7-bb95-ac80ae701fba",
+            "total": "30000",
+            "consumptionGrams": 40
+          }
+        },
+        {
+          "name": "1440 -> 390: paidAt sync and no second consumption",
+          "status": "PASS",
+          "detail": {
+            "paidAt": "2026-11-04T12:12:07.329Z"
+          }
+        },
+        {
+          "name": "1440 -> 390: menu price edits automatically revalidate; past snapshot unchanged",
+          "status": "PASS",
+          "detail": {
+            "snapshot": "15000",
+            "newPrice": "16.000đ"
+          }
+        },
+        {
+          "name": "390: STAFF owner APIs return 403",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "390: add, decrease, remove, item note and explicit paid creation",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "390: lost response after server commit + reload + retry never duplicates",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "390: offline locks saving; reconnect recovers",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "390: shifts register, check-in/out, private own history",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "390: legacy localStorage untouched, all layouts fit",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "1440 + 320: two independent logins and exact role navigation",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "320 -> 1440: cafe search, keyboard, qty2, rapid Save, shared order, inventory once",
+          "status": "PASS",
+          "detail": {
+            "orderId": "505ea52e-ae57-49c7-b8dd-118a5dfe4d0b",
+            "total": "32000",
+            "consumptionGrams": 40
+          }
+        },
+        {
+          "name": "1440 -> 320: paidAt sync and no second consumption",
+          "status": "PASS",
+          "detail": {
+            "paidAt": "2026-11-04T12:12:23.651Z"
+          }
+        },
+        {
+          "name": "1440 -> 320: menu price edits automatically revalidate; past snapshot unchanged",
+          "status": "PASS",
+          "detail": {
+            "snapshot": "16000",
+            "newPrice": "17.000đ"
+          }
+        },
+        {
+          "name": "320: STAFF owner APIs return 403",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "320: add, decrease, remove, item note and explicit paid creation",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "320: lost response after server commit + reload + retry never duplicates",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "320: offline locks saving; reconnect recovers",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "320: shifts register, check-in/out, private own history",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "320: legacy localStorage untouched, all layouts fit",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "name": "No JavaScript runtime errors or server 5xx",
+          "status": "PASS",
+          "detail": ""
+        }
+      ],
+      "scope": "Isolated native PostgreSQL + HTTP + independent Chromium contexts; not Neon/Vercel cloud",
+      "failure": null
+    },
+    "local-ux": {
+      "caseCount": 10,
+      "cases": [
+        {
+          "name": "Recipe availability, alias/unaccented Enter, disabled missing recipe and stale-cart notice",
+          "status": "PASS"
+        },
+        {
+          "name": "STAFF sale sync preserves all three OWNER draft fields; explicit reload and CAS lock",
+          "status": "PASS"
+        },
+        {
+          "name": "Rapid save once; payment no second deduction; cancellation returns once; shortage rolls back",
+          "status": "PASS"
+        },
+        {
+          "name": "History pagination complete/no duplicates; date filter UI",
+          "status": "PASS",
+          "loadMoreUI": "35 local tied-time rows"
+        },
+        {
+          "name": "OWNER creates/locks/unlocks/resets STAFF; new password login; old sessions revoked; STAFF403",
+          "status": "PASS",
+          "testAccountLeftLocked": true
+        },
+        {
+          "name": "Monday–Sunday default, next-week/tomorrow visibility, Vietnam time independent of UTC browser; attendance sync",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 1440",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 320",
+          "status": "PASS"
+        },
+        {
+          "name": "Pre-existing financial history unchanged; no JS runtime errors",
+          "status": "PASS"
+        }
+      ],
+      "scope": "Isolated native PostgreSQL + HTTP",
+      "failure": null
+    },
+    "local-extra": {
+      "caseCount": 8,
+      "cases": [
+        {
+          "name": "TEST menu edit/deactivate/reactivate; inactive sale rollback; recipe quantity update without duplicates",
+          "status": "PASS"
+        },
+        {
+          "name": "TEST ml ingredient creation; purchase replay once; adjustment; negative stock blocked",
+          "status": "PASS",
+          "stock": "3.500"
+        },
+        {
+          "name": "Dashboard sales/debt/receipts/COGS/result and TEST expense idempotency; STAFF403",
+          "status": "PASS"
+        },
+        {
+          "name": "New TEST shift correction owner-only; reason required; hours and audit verified",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 1440",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 320",
+          "status": "PASS"
+        },
+        {
+          "name": "Pre-existing financial history unchanged; no JS runtime errors",
+          "status": "PASS"
+        }
+      ],
+      "scope": "Isolated native PostgreSQL + HTTP",
+      "failure": null
+    },
+    "local-stability": {
+      "caseCount": 5,
+      "cases": [
+        {
+          "name": "lost product response + reload + replay creates one product",
+          "status": "PASS"
+        },
+        {
+          "name": "lost stock response + reload + replay adds one movement only",
+          "status": "PASS"
+        },
+        {
+          "name": "lost expense response + reload + replay creates one expense",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed mutation remains successful if subsequent refresh fails",
+          "status": "PASS"
+        },
+        {
+          "name": "expired STAFF session returns to login, OWNER independent session survives",
+          "status": "PASS"
+        }
+      ],
+      "scope": "LOCAL HTTP + PostgreSQL + independent browsers",
+      "failure": null
+    },
+    "local-price": {
+      "caseCount": 6,
+      "cases": [
+        {
+          "name": "OWNER prefilled decimal cost edit; negative HTML validity; no stock/history change",
+          "status": "PASS",
+          "cost": "12.345",
+          "stock": "1000.000"
+        },
+        {
+          "name": "OWNER edit form fits mobile 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER edit form fits mobile 320",
+          "status": "PASS"
+        },
+        {
+          "name": "STAFF403; invalid costs422; two OWNER sessions CAS200/409; stock/history unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "New TEST sale snapshots updated COGS; all previous ledger/items unchanged",
+          "status": "PASS",
+          "unitCost": "25.125"
+        },
+        {
+          "name": "New product auto-selected and recipe visible without manual reselection",
+          "status": "PASS"
+        }
+      ],
+      "scope": "Isolated native PostgreSQL/local HTTP",
+      "failure": null
+    },
+    "cloud-ux": {
+      "caseCount": 10,
+      "cases": [
+        {
+          "name": "Recipe availability, alias/unaccented Enter, disabled missing recipe and stale-cart notice",
+          "status": "PASS"
+        },
+        {
+          "name": "STAFF sale sync preserves all three OWNER draft fields; explicit reload and CAS lock",
+          "status": "PASS"
+        },
+        {
+          "name": "Rapid save once; payment no second deduction; cancellation returns once; shortage rolls back",
+          "status": "PASS"
+        },
+        {
+          "name": "History pagination complete/no duplicates; date filter UI",
+          "status": "PASS",
+          "loadMoreUI": "cloud API pages of 2; date-filter UI"
+        },
+        {
+          "name": "OWNER creates/locks/unlocks/resets STAFF; new password login; old sessions revoked; STAFF403",
+          "status": "PASS",
+          "testAccountLeftLocked": true
+        },
+        {
+          "name": "Monday–Sunday default, next-week/tomorrow visibility, Vietnam time independent of UTC browser; attendance sync",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 1440",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 320",
+          "status": "PASS"
+        },
+        {
+          "name": "Pre-existing financial history unchanged; no JS runtime errors",
+          "status": "PASS"
+        }
+      ],
+      "scope": "Real Neon/Vercel Preview",
+      "failure": null
+    },
+    "cloud-extra": {
+      "caseCount": 8,
+      "cases": [
+        {
+          "name": "TEST menu edit/deactivate/reactivate; inactive sale rollback; recipe quantity update without duplicates",
+          "status": "PASS"
+        },
+        {
+          "name": "TEST ml ingredient creation; purchase replay once; adjustment; negative stock blocked",
+          "status": "PASS",
+          "stock": "3.500"
+        },
+        {
+          "name": "Dashboard sales/debt/receipts/COGS/result and TEST expense idempotency; STAFF403",
+          "status": "PASS"
+        },
+        {
+          "name": "New TEST shift correction owner-only; reason required; hours and audit verified",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 1440",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER five screens fit 320",
+          "status": "PASS"
+        },
+        {
+          "name": "Pre-existing financial history unchanged; no JS runtime errors",
+          "status": "PASS"
+        }
+      ],
+      "scope": "Real Neon/Vercel Preview",
+      "failure": null
+    },
+    "cloud-stability": {
+      "caseCount": 6,
+      "cases": [
+        {
+          "name": "exact Preview build; independent OWNER/STAFF; STAFF403",
+          "status": "PASS"
+        },
+        {
+          "name": "cloud product response lost after commit: reload/replay once",
+          "status": "PASS"
+        },
+        {
+          "name": "cloud stock response lost after commit: one purchase, not double",
+          "status": "PASS"
+        },
+        {
+          "name": "cloud expense response lost after commit: one expense after reload",
+          "status": "PASS"
+        },
+        {
+          "name": "only this TEST STAFF session expired; OWNER remains valid",
+          "status": "PASS"
+        },
+        {
+          "name": "pre-existing ledger unchanged; business menu not imported",
+          "status": "PASS"
+        }
+      ],
+      "scope": "REAL Preview TEST only",
+      "failure": null
+    },
+    "cloud-price": {
+      "caseCount": 5,
+      "cases": [
+        {
+          "name": "OWNER prefilled decimal cost edit; negative HTML validity; no stock/history change",
+          "status": "PASS",
+          "cost": "12.345",
+          "stock": "1003.500"
+        },
+        {
+          "name": "OWNER edit form fits mobile 390",
+          "status": "PASS"
+        },
+        {
+          "name": "OWNER edit form fits mobile 320",
+          "status": "PASS"
+        },
+        {
+          "name": "STAFF403; invalid costs422; two OWNER sessions CAS200/409; stock/history unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "New TEST sale snapshots updated COGS; all previous ledger/items unchanged",
+          "status": "PASS",
+          "unitCost": "25.125"
+        }
+      ],
+      "scope": "Neon/Vercel Preview",
+      "failure": null
+    },
+    "menu-local": {
+      "date": "2026-11-04",
+      "scope": "LOCAL_ONLY",
+      "cloud": "NOT_RUN",
+      "cases": [
+        {
+          "name": "independent OWNER/STAFF local logins",
+          "status": "PASS"
+        },
+        {
+          "name": "target preflight before writing menu",
+          "status": "PASS"
+        },
+        {
+          "name": "create normalized ingredients, purchase replay once, STAFF forbidden",
+          "status": "PASS"
+        },
+        {
+          "name": "create only READY products and recipes using actual API versions",
+          "status": "PASS"
+        },
+        {
+          "name": "re-import twice skips existing identical names/recipes; no duplicate data or stock reset",
+          "status": "PASS"
+        },
+        {
+          "name": "all READY recipes: sale replay, exact stock, decimal COGS, payment",
+          "status": "PASS"
+        },
+        {
+          "name": "paid cancellation restores original consumption once across two keys",
+          "status": "PASS"
+        },
+        {
+          "name": "historical COGS preserved after ingredient price change; future COGS updated",
+          "status": "PASS"
+        },
+        {
+          "name": "insufficient stock rolls back; dashboard and ledger reconcile",
+          "status": "PASS"
+        },
+        {
+          "name": "normalized real menu through HTTP/browser: two logins, S2 keyboard sale, exact stock, 320/390/1440 layouts",
+          "status": "PASS"
+        }
+      ],
+      "products": [
+        {
+          "name": "Cà phê đen",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Cà phê sữa",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Bạc xỉu",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Sữa chua đá",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "xúc xích s2",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Matcha dâu",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Americano",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Nước cam",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Sữa chua dâu",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Cacao latte",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "mocha cacao",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Cà phê sữa tươi",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "247 coffee",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Redbull",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "Coca",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        },
+        {
+          "name": "vải - mirinda",
+          "sale": "PASS",
+          "stockOnce": "PASS",
+          "cogs": "PASS",
+          "paymentNoStockChange": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "sourceSha256": "07f1a0d267ee42f78632234ea0e125925e3516826ce2ca91db13a551f1cab842",
+      "summary": {
+        "namedRecipes": 26,
+        "ready": 16,
+        "needsConfirmation": 9,
+        "stopped": 1,
+        "skippedMenu": 29
+      }
+    },
+    "encrypted-restore": {
+      "checkedAt": "2026-11-05T00:43:07.089Z",
+      "sourceBranch": "br-bitter-butterfly-b8nl03v0",
+      "sourceDatabase": "neondb",
+      "scope": "public",
+      "excluded": [
+        "neon_auth",
+        "cluster roles"
+      ],
+      "backup": "PASS",
+      "restore": "PASS",
+      "identity": "PASS",
+      "backupSha256": "59b52cf44142416959c762055c04dfebe962773bff1ae2b566351342009a3efd",
+      "encryption": "PASS",
+      "tamperDetection": "PASS",
+      "restoreInput": "decrypted authenticated AES-256-GCM backup",
+      "keyCustody": "LOCAL_ONLY: independent long-term storage and owner key custody pending",
+      "tables": [
+        {
+          "name": "account",
+          "rows": 3,
+          "match": true
+        },
+        {
+          "name": "audit_logs",
+          "rows": 48,
+          "match": true
+        },
+        {
+          "name": "cancellations",
+          "rows": 1,
+          "match": true
+        },
+        {
+          "name": "expenses",
+          "rows": 1,
+          "match": true
+        },
+        {
+          "name": "idempotency",
+          "rows": 24,
+          "match": true
+        },
+        {
+          "name": "ingredients",
+          "rows": 3,
+          "match": true
+        },
+        {
+          "name": "legacy_archives",
+          "rows": 0,
+          "match": true
+        },
+        {
+          "name": "order_items",
+          "rows": 5,
+          "match": true
+        },
+        {
+          "name": "orders",
+          "rows": 5,
+          "match": true
+        },
+        {
+          "name": "payments",
+          "rows": 2,
+          "match": true
+        },
+        {
+          "name": "products",
+          "rows": 5,
+          "match": true
+        },
+        {
+          "name": "rateLimit",
+          "rows": 1,
+          "match": true
+        },
+        {
+          "name": "recipes",
+          "rows": 3,
+          "match": true
+        },
+        {
+          "name": "schema_migrations",
+          "rows": 3,
+          "match": true
+        },
+        {
+          "name": "session",
+          "rows": 28,
+          "match": true
+        },
+        {
+          "name": "shifts",
+          "rows": 3,
+          "match": true
+        },
+        {
+          "name": "stock_movements",
+          "rows": 11,
+          "match": true
+        },
+        {
+          "name": "user",
+          "rows": 3,
+          "match": true
+        },
+        {
+          "name": "user_access",
+          "rows": 3,
+          "match": true
+        },
+        {
+          "name": "verification",
+          "rows": 0,
+          "match": true
+        }
+      ],
+      "foreignKeys": {
+        "total": 20,
+        "invalid": 0
+      },
+      "invariants": {
+        "stock_mismatches": 0,
+        "order_mismatches": 0,
+        "payment_mismatches": 0,
+        "duplicate_stock": 0,
+        "invalid_shifts": 0
+      }
+    }
+  },
+  "production": "BLOCKED: credentials/PITR/key custody/counts/legacy export outstanding",
+  "localBrowserCases": 50,
+  "cloudBrowserCases": 29,
+  "databaseRecovery": {
+    "realIdleBackendTermination": "PASS",
+    "nextQueryReconnect": "PASS",
+    "secretRedaction": "PASS"
+  },
+  "operatorLocal": {
+    "atomicProvisioning": "PASS",
+    "ownerRecoveryAndSessionRevocation": "PASS",
+    "productionGuard": "PASS"
+  },
+  "legacyDeviceExporter": "PASS synthetic read-only preservation test; actual devices not exported",
+  "decimalNormalization": {
+    "method": "exact rational price / supplied usable quantity, half-up to 3",
+    "planIdenticalToPreviouslyTested16Products": true
+  },
+  "clientBodyDeadlineRegression": "PASS asserted stalled JSON abort after headers"
+}

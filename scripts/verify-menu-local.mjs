@@ -12,6 +12,8 @@ import { createAuth } from '../server/auth.js';
 import { createApp } from '../server/app.js';
 import { businessDate } from '../src/domain.js';
 import {inspectLocalPlan,applyLocalPlan} from './menu-local-import.mjs';
+import {serve} from '../server/http.js';
+import {freePort} from '../tests/helpers/postgres.js';
 
 process.umask(0o077);
 const scaled = (value, digits=3) => {
@@ -19,11 +21,11 @@ const scaled = (value, digits=3) => {
   assert.ok(fraction.length <= digits || /^0*$/.test(fraction.slice(digits)));
   return BigInt(whole + fraction.slice(0,digits).padEnd(digits,'0'));
 };
-let instance, pool, directory;
+let instance, pool, directory, httpServer, browser;
 const report = { date: null, scope: 'LOCAL_ONLY', cloud: 'NOT_RUN', cases: [], products: [] };
 const check = (name, fn) => Promise.resolve().then(fn).then(() => report.cases.push({ name, status: 'PASS' }));
 try {
-  if (process.argv.length !== 3) throw new Error('Supply private source JSON only');
+  if (![3,4].includes(process.argv.length)||(process.argv[3]&&!process.argv[3].startsWith('--playwright='))) throw new Error('Supply private source JSON and optional --playwright=module');
   const source = JSON.parse(await readFile(process.argv[2],'utf8'));report.date=source.readDate;
   const result = dryRun(source,{ownerApproved:true}), plan=apiPlan(result);
   assert.ok(plan.products.length>0);
@@ -37,7 +39,7 @@ try {
   pool=new pg.Pool({host:'127.0.0.1',port,user,password,database:'postgres',max:8});
   await writeFile(path.join(directory,'local-access-private.json'),JSON.stringify({host:'127.0.0.1',port,user,password,database:'postgres'}),{mode:0o600});
   await migrate(pool,{target:'test'});
-  const origin='http://127.0.0.1:4176', config={origin,secret:randomBytes(48).toString('base64url')};
+  const webPort=await freePort(),origin=`http://127.0.0.1:${webPort}`, config={origin,secret:randomBytes(48).toString('base64url')};
   const provision=createAuth(pool,config,{provisioning:true});
   const credentials={};
   for(const role of ['owner','staff']) {
@@ -137,9 +139,24 @@ try {
     const sum=(await pool.query("SELECT sum(-s.quantity*s.unit_cost)::text cost FROM stock_movements s WHERE kind='consumption' AND NOT EXISTS(SELECT 1 FROM cancellations c WHERE c.order_id=s.order_id)")).rows[0].cost;
     assert.equal(scaled(dashboard.cogs,6),scaled(sum,6));assert.equal(dashboard.count,plan.products.length);
   });
+  if(process.argv[3])await check('normalized real menu through HTTP/browser: two logins, S2 keyboard sale, exact stock, 320/390/1440 layouts',async()=>{
+    const {chromium}=await import(process.argv[3].slice(13));httpServer=await serve(app,{port:webPort});
+    browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,chromiumSandbox:true});
+    const pc=await (await browser.newContext({viewport:{width:1440,height:900}})).newPage(),mobile=await (await browser.newContext({viewport:{width:390,height:844}})).newPage();const errors=[];
+    for(const [page,role]of [[pc,'owner'],[mobile,'staff']]){page.on('pageerror',()=>errors.push('JS_ERROR'));await page.goto(origin);await page.getByLabel('Email',{exact:true}).fill(credentials[role].email);await page.getByLabel('Mật khẩu',{exact:true}).fill(credentials[role].password);await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await page.getByRole('navigation').waitFor();await page.locator('.menu-item').first().waitFor();}
+    assert.equal(await mobile.locator('.menu-item').count(),plan.products.length);
+    const ingredientId=ids.get(plan.products.find(p=>p.create.name.toLowerCase()==='xúc xích s2').recipe[0].ingredientKey);
+    const before=scaled((await pool.query('SELECT stock::text FROM ingredients WHERE id=$1',[ingredientId])).rows[0].stock);
+    await mobile.getByLabel('Tìm món',{exact:true}).fill('xuc xich');await mobile.getByLabel('Tìm món',{exact:true}).press('Enter');await mobile.getByLabel('Đã thanh toán',{exact:true}).check();
+    const wait=mobile.waitForResponse(r=>new URL(r.url()).pathname==='/api/v1/orders'&&r.request().method()==='POST');await mobile.getByRole('button',{name:'Lưu',exact:true}).click();assert.equal((await wait).status(),201);await mobile.locator('.cart-line').waitFor({state:'detached'});
+    assert.equal(before-scaled((await pool.query('SELECT stock::text FROM ingredients WHERE id=$1',[ingredientId])).rows[0].stock),2000n);
+    for(const width of [1440,390,320]){await pc.setViewportSize({width,height:900});for(const tab of ['Bán hàng','Dashboard','Kho & Menu','Chi phí','Nhân viên']){await pc.getByRole('navigation').getByRole('button',{name:tab,exact:true}).click();assert.equal(await pc.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}}
+    assert.deepEqual(errors,[]);
+  });
   report.status='PASS';report.sourceSha256=result.sourceSha256;report.summary=result.summary;
 } catch(error) {report.status='FAIL';report.errorCode=error.code||'ASSERTION_OR_SETUP_FAILED';process.exitCode=1;}
 finally {
+  await browser?.close();if(httpServer)await new Promise(resolve=>httpServer.close(resolve));
   await pool?.end().catch(()=>{}); await instance?.stop().catch(()=>{});
   if(directory) await writeFile(path.join(directory,'verification.json'),JSON.stringify(report,null,2),{mode:0o600});
   process.exitCode=report.status==='PASS'?0:1;
